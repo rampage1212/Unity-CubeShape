@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class Controls : MonoBehaviour {
+public class CameraControls : MonoBehaviour {
 
     private const float cameraDistance = 10.0f;
     private const float animationDuration = 1.0f;
