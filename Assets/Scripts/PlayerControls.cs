@@ -3,7 +3,7 @@ using System.Collections;
 
 public class PlayerControls : MonoBehaviour {
 
-    const float animationDuration = 10.0f;
+    const float animationDuration = 15.0f;
     const int mapSize = 10;
 
     public AudioSource hitSound;
@@ -16,12 +16,8 @@ public class PlayerControls : MonoBehaviour {
 
 	void Update() {
 
-        if (Vector3.Distance(transform.position, Vector3.zero) > 10.0f) {
-            Destroy(gameObject);
-            return;
-        }
-
-        if (iTween.Count(gameObject) == 0) {
+        if (iTween.Count(gameObject) == 0
+            && iTween.Count(Camera.main.gameObject) == 0) {
             // if not moving at the moment
             Transform direction = Camera.main.transform;
             movement = Vector3.zero;
@@ -50,7 +46,8 @@ public class PlayerControls : MonoBehaviour {
                 }
 
                 if (i > 0) {
-                    iTween.MoveTo(gameObject, iTween.Hash("position", transform.position + movement * i,
+                    iTween.MoveTo(gameObject, iTween.Hash("name", "playerMovement", 
+                        "position", transform.position + movement * i,
                         "speed", animationDuration, "easetype", iTween.EaseType.linear,
                         "onComplete", "AfterMovement"));
                 }
