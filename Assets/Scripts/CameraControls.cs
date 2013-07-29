@@ -6,6 +6,8 @@ public class CameraControls : MonoBehaviour {
     private const float cameraDistance = 13.0f;
     private const float animationDuration = 1.0f;
 
+    private Vector3 newPosition = Vector3.zero;
+
 	void Start() {
 
 	}
@@ -40,13 +42,31 @@ public class CameraControls : MonoBehaviour {
             }
 
             if (!movement.Equals(Vector3.zero)) {
-                Debug.Log(transform.position + movement * cameraDistance);
-                iTween.MoveTo(gameObject, transform.position + movement * cameraDistance, animationDuration);
+                newPosition = transform.position + movement * cameraDistance;
+                newPosition.Set(Mathf.Round(newPosition.x), Mathf.Round(newPosition.y), Mathf.Round(newPosition.z));
+
+                Hashtable moveTo = new Hashtable();
+                moveTo.Add("position", newPosition);
+                moveTo.Add("time", animationDuration);
+                iTween.MoveTo(gameObject, moveTo);
             }
 
             if (!rotation.Equals(Vector3.zero)) {
-                iTween.RotateBy(gameObject, rotation, animationDuration);
+                Hashtable rotateBy = new Hashtable();
+                rotateBy.Add("amount", rotation);
+                rotateBy.Add("time", animationDuration);
+                rotateBy.Add("onComplete", "AfterRotation");
+                iTween.RotateBy(gameObject, rotateBy);
             }
         }
 	}
+
+    IEnumerable AfterRotation() {
+        // Round the angles
+        transform.eulerAngles = new Vector3(
+            Mathf.Round(transform.rotation.eulerAngles.x),
+            Mathf.Round(transform.rotation.eulerAngles.y),
+            Mathf.Round(transform.rotation.eulerAngles.z));
+        return null;
+    }
 }
