@@ -3,6 +3,9 @@ using System.Collections;
 
 public class CameraControls : MonoBehaviour {
 
+    public AudioSource moveSound;
+    public AudioSource rotationSound;
+
     private const float cameraDistance = 13.0f;
     private const float animationDuration = 1.0f;
 
@@ -57,6 +60,14 @@ public class CameraControls : MonoBehaviour {
                 rotateBy.Add("time", animationDuration);
                 rotateBy.Add("onComplete", "AfterRotation");
                 iTween.RotateBy(gameObject, rotateBy);
+            }
+
+            // Play sound
+            if (iTween.Count(gameObject) == 1) {
+                // Just the rotation
+                rotationSound.Play();
+            } else if (iTween.Count(gameObject) > 1) {
+                moveSound.Play();
             }
         }
 	}

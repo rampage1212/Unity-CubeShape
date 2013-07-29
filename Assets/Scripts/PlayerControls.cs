@@ -6,6 +6,8 @@ public class PlayerControls : MonoBehaviour {
     const float animationDuration = 10.0f;
     const int mapSize = 10;
 
+    public AudioSource hitSound;
+    public AudioSource deathSound;
     public Vector3 movement;
 
 	void Start() {
@@ -47,9 +49,17 @@ public class PlayerControls : MonoBehaviour {
                     i = 20;
                 }
 
-                iTween.MoveTo(gameObject, iTween.Hash("position", transform.position + movement * i, 
-                    "speed", animationDuration, "easetype", iTween.EaseType.linear));
+                if (i > 0) {
+                    iTween.MoveTo(gameObject, iTween.Hash("position", transform.position + movement * i,
+                        "speed", animationDuration, "easetype", iTween.EaseType.linear,
+                        "onComplete", "AfterMovement"));
+                }
             }
         }
 	}
+
+    IEnumerable AfterMovement() {
+        hitSound.Play();
+        return null;
+    }
 }
