@@ -8,6 +8,8 @@ public class GameLogic : MonoBehaviour {
     private Vector3 mapCenter;
 
 	void Start() {
+        Instantiate(Config.levelToLoad, Vector3.zero, Quaternion.identity);
+
         playerCube = GameObject.Find("PlayerCube");
         startPosition = playerCube.transform.position;
         mapCenter = new Vector3(0.0f, 3.0f, 0.0f);

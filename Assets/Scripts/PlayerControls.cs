@@ -41,10 +41,6 @@ public class PlayerControls : MonoBehaviour {
                     }
                 }
 
-                if (i > mapSize) {
-                    i = 20;
-                }
-
                 if (i > 0) {
                     iTween.MoveTo(gameObject, iTween.Hash("name", "playerMovement", 
                         "position", transform.position + movement * i,
