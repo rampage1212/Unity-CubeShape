@@ -10,13 +10,15 @@ public class PlayerControls : MonoBehaviour {
     public AudioSource deathSound;
     public Vector3 movement;
 
+    public bool finished { get; private set; }
+
 	void Start() {
         movement = Vector3.zero;
 	}
 
 	void Update() {
 
-        if (iTween.Count(gameObject) == 0
+        if (!finished && iTween.Count(gameObject) == 0
             && iTween.Count(Camera.main.gameObject) == 0) {
             // if not moving at the moment
             Transform direction = Camera.main.transform;
@@ -34,8 +36,14 @@ public class PlayerControls : MonoBehaviour {
 
             if (!movement.Equals(Vector3.zero)) {
                 int i;
+                Collider[] colliders;
                 for (i = 1; i <= mapSize; i++) {
-                    if (Physics.OverlapSphere(transform.position + movement * i, 0.1f).Length > 0) {
+                    colliders = Physics.OverlapSphere(transform.position + movement * i, 0.1f);
+                    if (colliders.Length > 0) {
+                        // Collision with FinishCube
+                        if (colliders[0].gameObject.tag == "FinishCube") {
+                            finished = true;
+                        }
                         i--;
                         break;
                     }

@@ -16,9 +16,7 @@ public class CameraControls : MonoBehaviour {
 	}
 
     void OnGUI() {
-        if (GameObject.Find("PlayerCube") == null) {
-            GUILayout.Label("Game Over");
-        }
+       
     }
 
 	void Update() {
