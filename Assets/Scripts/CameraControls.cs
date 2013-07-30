@@ -7,7 +7,7 @@ public class CameraControls : MonoBehaviour {
     public AudioSource rotationSound;
 
     private const float cameraDistance = 13.0f;
-    private const float animationDuration = 1.0f;
+    private const float animationDuration = 0.5f;
 
     private Vector3 newPosition = Vector3.zero;
 
@@ -49,6 +49,7 @@ public class CameraControls : MonoBehaviour {
                 Hashtable moveTo = new Hashtable();
                 moveTo.Add("position", newPosition);
                 moveTo.Add("time", animationDuration);
+                moveTo.Add("easetype", "linear");
                 iTween.MoveTo(gameObject, moveTo);
             }
 
@@ -56,6 +57,7 @@ public class CameraControls : MonoBehaviour {
                 Hashtable rotateBy = new Hashtable();
                 rotateBy.Add("amount", rotation);
                 rotateBy.Add("time", animationDuration);
+                rotateBy.Add("easetype", "linear");
                 rotateBy.Add("onComplete", "AfterRotation");
                 iTween.RotateBy(gameObject, rotateBy);
             }

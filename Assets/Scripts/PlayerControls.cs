@@ -52,7 +52,7 @@ public class PlayerControls : MonoBehaviour {
                 if (i > 0) {
                     iTween.MoveTo(gameObject, iTween.Hash("name", "playerMovement", 
                         "position", transform.position + movement * i,
-                        "speed", animationDuration, "easetype", iTween.EaseType.linear,
+                        "speed", animationDuration, "easetype", "linear",
                         "onComplete", "AfterMovement"));
                 }
             }
