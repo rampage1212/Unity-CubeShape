@@ -9,10 +9,11 @@ public class CameraControls : MonoBehaviour {
     private const float cameraDistance = 13.0f;
     private const float animationDuration = 0.5f;
 
-    private Vector3 newPosition = Vector3.zero;
+
+    private Vector3 originalPosition;
 
 	void Start() {
-
+        originalPosition = transform.position;
 	}
 
     void OnGUI() {
@@ -40,10 +41,20 @@ public class CameraControls : MonoBehaviour {
                 rotation.z = -0.25f;
             } else if (Input.GetKeyDown(KeyCode.E)) {
                 rotation.z = 0.25f;
+            } else if (Input.GetKeyDown(KeyCode.Space)) {
+                // Return to original position
+                if (!transform.position.Equals(originalPosition) ||
+                    !transform.rotation.Equals(Quaternion.identity)) {
+                    iTween.MoveTo(gameObject, iTween.Hash("position", originalPosition,
+                        "time", animationDuration, "easetype", "linear"));
+                    iTween.RotateTo(gameObject, iTween.Hash("rotation", Vector3.zero, 
+                        "time", animationDuration, "easetype", "linear"));
+                    moveSound.Play();
+                }
             }
 
             if (!movement.Equals(Vector3.zero)) {
-                newPosition = transform.position + movement * cameraDistance;
+                Vector3 newPosition = transform.position + movement * cameraDistance;
                 newPosition.Set(Mathf.Round(newPosition.x), Mathf.Round(newPosition.y), Mathf.Round(newPosition.z));
 
                 Hashtable moveTo = new Hashtable();

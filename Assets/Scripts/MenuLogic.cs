@@ -4,21 +4,26 @@ using System.Collections;
 public class MenuLogic : MonoBehaviour {
 
     public GUISkin skin;
-    public GameObject[] levels;
 
     private Rect innerArea = new Rect(400.0f, 200.0f, 150.0f, 500.0f);
 
     const float targetWidth = 1024.0f;
     const float targetHeight = 768.0f;
 
+    private LevelManager levelManager;
     private Vector3 scale;
 
+    private GameObject decorationCube;
+
 	void Start() {
-	
+        levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
+        decorationCube = GameObject.Find("DecorationCube");
 	}
 	
 	void Update() {
-	
+	    if (iTween.Count(decorationCube) == 0) {
+            iTween.RotateBy(decorationCube, iTween.Hash("y", 1.0f, "time", 7.0f, "easetype", "linear"));
+        }
 	}
 
     void OnGUI() {
@@ -34,12 +39,15 @@ public class MenuLogic : MonoBehaviour {
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, scale);
 
         GUILayout.BeginArea(innerArea);
-        foreach (GameObject level in levels) {
-            if (GUILayout.Button(level.name)) {
-                Config.levelToLoad = level;
-                Application.LoadLevel("Game");
+        for (int i = 0; i < levelManager.levels.Length; i++) {
+            GameObject level = levelManager.levels[i];
+                if (GUILayout.Button(level.name)) {
+                    iTween.Stop();
+                    levelManager.SetCurrentLevel(i);
+                    Object.DontDestroyOnLoad(levelManager);
+                    Application.LoadLevel("Game");
+                }
             }
-        }
         GUILayout.EndArea();
 
         // Restore matirx
