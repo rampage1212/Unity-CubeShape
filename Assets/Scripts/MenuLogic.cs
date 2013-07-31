@@ -4,6 +4,7 @@ using System.Collections;
 public class MenuLogic : MonoBehaviour {
 
     public GUISkin skin;
+    public AudioSource buttonSound;
 
     private Rect innerArea = new Rect(400.0f, 200.0f, 150.0f, 500.0f);
 
@@ -43,14 +44,20 @@ public class MenuLogic : MonoBehaviour {
             GameObject level = levelManager.levels[i];
                 if (GUILayout.Button(level.name)) {
                     iTween.Stop();
+                    buttonSound.Play();
+
                     levelManager.SetCurrentLevel(i);
                     Object.DontDestroyOnLoad(levelManager);
-                    Application.LoadLevel("Game");
+                    Invoke("LoadGameLevel", 0.5f);
                 }
             }
         GUILayout.EndArea();
 
         // Restore matirx
         GUI.matrix = matrix;
+    }
+
+    void LoadGameLevel() {
+        Application.LoadLevel("Game");
     }
 }

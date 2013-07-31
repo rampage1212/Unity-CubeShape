@@ -3,17 +3,20 @@ using System.Collections;
 
 public class PlayerControls : MonoBehaviour {
 
-    const float animationDuration = 15.0f;
+    const float animationSpeed = 15.0f;
     const int mapSize = 10;
 
     public AudioSource hitSound;
     public AudioSource deathSound;
     public Vector3 movement;
 
+    public int movesCount { get; private set; }
+
     public bool finished { get; private set; }
 
 	void Start() {
         movement = Vector3.zero;
+        movesCount = 0;
 	}
 
 	void Update() {
@@ -50,9 +53,9 @@ public class PlayerControls : MonoBehaviour {
                 }
 
                 if (i > 0) {
-                    iTween.MoveTo(gameObject, iTween.Hash("name", "playerMovement", 
-                        "position", transform.position + movement * i,
-                        "speed", animationDuration, "easetype", "linear",
+                    increaseMovesCount();
+                    iTween.MoveTo(gameObject, iTween.Hash("position", transform.position + movement * i,
+                        "speed", animationSpeed, "easetype", "linear",
                         "onComplete", "AfterMovement"));
                 }
             }
@@ -62,5 +65,13 @@ public class PlayerControls : MonoBehaviour {
     IEnumerable AfterMovement() {
         hitSound.Play();
         return null;
+    }
+
+    public void resetMovesCount() {
+        movesCount = 0;
+    }
+
+    public void increaseMovesCount() {
+        movesCount++;
     }
 }

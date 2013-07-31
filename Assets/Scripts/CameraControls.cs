@@ -9,18 +9,20 @@ public class CameraControls : MonoBehaviour {
     private const float cameraDistance = 13.0f;
     private const float animationDuration = 0.5f;
 
-
     private Vector3 originalPosition;
+
+    private GameLogic game;
 
 	void Start() {
         originalPosition = transform.position;
+        game = GameObject.Find("GameLogic").GetComponent<GameLogic>();
 	}
 
     void OnGUI() {
        
     }
 
-	void Update() {
+	void Update() { 
         if (iTween.Count(gameObject) == 0) {
             Vector3 movement = Vector3.zero;
             Vector3 rotation = Vector3.zero;
@@ -42,14 +44,16 @@ public class CameraControls : MonoBehaviour {
             } else if (Input.GetKeyDown(KeyCode.E)) {
                 rotation.z = 0.25f;
             } else if (Input.GetKeyDown(KeyCode.Space)) {
-                // Return to original position
-                if (!transform.position.Equals(originalPosition) ||
-                    !transform.rotation.Equals(Quaternion.identity)) {
+                // Return to the original position
+                if (!transform.position.Equals(originalPosition)) {
                     iTween.MoveTo(gameObject, iTween.Hash("position", originalPosition,
                         "time", animationDuration, "easetype", "linear"));
-                    iTween.RotateTo(gameObject, iTween.Hash("rotation", Vector3.zero, 
-                        "time", animationDuration, "easetype", "linear"));
-                    moveSound.Play();
+                }
+
+                // Return to the original rotation  
+                if (!transform.rotation.Equals(Quaternion.identity)) {
+                    iTween.RotateTo(gameObject, iTween.Hash("rotation", Vector3.zero,
+                        "time", animationDuration, "easetype", "linear", "onComplete", "AfterRotation"));
                 }
             }
 
@@ -71,6 +75,11 @@ public class CameraControls : MonoBehaviour {
                 rotateBy.Add("easetype", "linear");
                 rotateBy.Add("onComplete", "AfterRotation");
                 iTween.RotateBy(gameObject, rotateBy);
+            }
+
+            // Increase moves count if move was made
+            if (iTween.Count(gameObject) > 0) {
+                game.playerControls.increaseMovesCount();
             }
 
             // Play sound
