@@ -6,7 +6,7 @@ public class MenuLogic : MonoBehaviour {
     public GUISkin skin;
     public AudioSource buttonSound;
 
-    private Rect innerArea = new Rect(400.0f, 200.0f, 150.0f, 500.0f);
+    private Rect innerArea = new Rect(500.0f, 200.0f, 150.0f, 500.0f);
 
     const float targetWidth = 1024.0f;
     const float targetHeight = 768.0f;

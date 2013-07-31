@@ -3,7 +3,9 @@ using System.Collections;
 
 public class GameLogic : MonoBehaviour {
 
+    public GUISkin HUDSkin;
     public AudioSource completeSound;
+    public GameObject testLevel;
 
     private LevelManager levelManager;
 
@@ -19,8 +21,13 @@ public class GameLogic : MonoBehaviour {
 
 	void Start() {
         originalCameraPosition = Camera.main.transform.position;
-        levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
-        InitializeLevel(levelManager.CurrentLevel());
+
+        if (GameObject.Find("LevelManager") != null) {
+            levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
+            InitializeLevel(levelManager.CurrentLevel());
+        } else {
+            InitializeLevel(testLevel);
+        }
 	}
 
     void InitializeLevel(GameObject level) {
@@ -37,7 +44,14 @@ public class GameLogic : MonoBehaviour {
     }
 
     void OnGUI() {
-        GUILayout.Label("Level " + (levelManager.currentLevelID + 1));
+        GUI.skin = HUDSkin;
+
+        if (levelManager != null) {
+            GUILayout.Label("Level " + (levelManager.currentLevelID + 1));
+        } else {
+            GUILayout.Label("Test Level");
+        }
+
         GUILayout.Label("Moves: " + playerControls.movesCount);
     }
 	
@@ -59,7 +73,12 @@ public class GameLogic : MonoBehaviour {
             iTween.Count(playerCube.gameObject) == 0) {
             completeSound.Play();
             Destroy(currentLevel);
-            InitializeLevel(levelManager.NextLevel());
+
+            if (levelManager != null) {
+                InitializeLevel(levelManager.NextLevel());
+            } else {
+                InitializeLevel(currentLevel);
+            }
         }
 	}
 }
