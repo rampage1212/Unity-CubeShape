@@ -1,33 +1,55 @@
+using System;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class LevelManager : MonoBehaviour {
 
-    public GameObject[] levels;
+    public List<LevelPack> levelPacks;
+    public LevelPack currentLevelPack { get; private set; }
 
     public int currentLevelID { get; private set; }
 
 	void Start() {
-	
-	}
-	
-	void Update() {
-	
+        levelPacks = new List<LevelPack>();
+
+        foreach (string packName in Directory.GetDirectories("Assets\\Levels")) {
+            // Get the name of the pack
+            String[] words = packName.Split('\\');
+            LevelPack pack = new LevelPack(words[words.Length - 1]);
+            
+            foreach (string levelName in Directory.GetFiles(packName, "*.lvl")) {
+                Stream stream = new FileStream(levelName, FileMode.Open);
+                BinaryFormatter formatter = new BinaryFormatter();
+                
+                // Deserialize level file
+                pack.AddLevel((LevelInfo) formatter.Deserialize(stream));
+                
+                stream.Close();
+            }
+
+            levelPacks.Add(pack);
+        }
 	}
 
     public void SetCurrentLevel(int id) {
-        currentLevelID= id;
+        currentLevelID = id;
     }
 
-    public GameObject NextLevel() {
-        if (currentLevelID < levels.Length - 1) {
+    public void setCurrentLevelPack(LevelPack levelPack) {
+        currentLevelPack = levelPack;
+    }
+
+    public LevelInfo NextLevel() {
+        if (currentLevelID < currentLevelPack.levels.Count - 1) {
             currentLevelID++;            
         }
 
         return CurrentLevel();
     }
 
-    public GameObject CurrentLevel() {
-        return levels[currentLevelID];
+    public LevelInfo CurrentLevel() {
+        return currentLevelPack.levels[currentLevelID];
     }
 }

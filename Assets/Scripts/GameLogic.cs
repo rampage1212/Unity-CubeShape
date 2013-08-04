@@ -1,19 +1,24 @@
 using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class GameLogic : MonoBehaviour {
 
     public GUISkin HUDSkin;
     public AudioSource completeSound;
-    public GameObject testLevel;
+
+    public GameObject playerCubePrefab;
+    public GameObject finishCubePrefab;
+    public GameObject cubePrefab;
 
     private LevelManager levelManager;
-
-    private GameObject currentLevel;
     
     // Player stuff
     public Transform playerCube { get; private set; }
     public PlayerControls playerControls { get; private set; }
+
+    // Level info
+    private GameObject finishCube;
+    private List<GameObject> cubes;
 
     private Vector3 originalCameraPosition;
     private Vector3 startPosition;
@@ -21,23 +26,25 @@ public class GameLogic : MonoBehaviour {
 
 	void Start() {
         originalCameraPosition = Camera.main.transform.position;
+        cubes = new List<GameObject>();
 
         if (GameObject.Find("LevelManager") != null) {
             levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
             InitializeLevel(levelManager.CurrentLevel());
-        } else {
-            InitializeLevel(testLevel);
         }
 	}
 
-    void InitializeLevel(GameObject level) {
+    void InitializeLevel(LevelInfo level) {
         // Restore original camera position
         Camera.main.transform.position = originalCameraPosition;
         Camera.main.transform.rotation = Quaternion.identity;
         
-        currentLevel = Instantiate(level, Vector3.zero, Quaternion.identity) as GameObject;
+        GameObject playerObject = Instantiate(playerCubePrefab, 
+            level.playerCube.position(), Quaternion.identity) as GameObject;
+        playerCube = playerObject.transform;
 
-        playerCube = currentLevel.transform.Find("PlayerCube");
+        finishCube = Instantiate(finishCubePrefab, level.finishCube.position(), Quaternion.identity) as GameObject;
+
         playerControls = playerCube.GetComponent<PlayerControls>();
         startPosition = playerCube.transform.position;
         mapCenter = new Vector3(0.0f, 3.0f, 0.0f);
@@ -56,7 +63,7 @@ public class GameLogic : MonoBehaviour {
     }
 	
 	void Update() {
-        if (currentLevel == null || playerCube == null) {
+        if (playerCube == null) {
             return;
         }
 
@@ -72,12 +79,17 @@ public class GameLogic : MonoBehaviour {
         if (playerControls.finished &&
             iTween.Count(playerCube.gameObject) == 0) {
             completeSound.Play();
-            Destroy(currentLevel);
+
+            Destroy(playerCube.gameObject);
+            Destroy(finishCube);
+
+            foreach (GameObject cube in cubes) {
+                Destroy(cube);
+            }
+            cubes.Clear();
 
             if (levelManager != null) {
                 InitializeLevel(levelManager.NextLevel());
-            } else {
-                InitializeLevel(currentLevel);
             }
         }
 	}

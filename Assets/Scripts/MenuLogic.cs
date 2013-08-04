@@ -6,7 +6,7 @@ public class MenuLogic : MonoBehaviour {
     public GUISkin skin;
     public AudioSource buttonSound;
 
-    private Rect innerArea = new Rect(500.0f, 200.0f, 150.0f, 500.0f);
+    private Rect innerArea = new Rect(500.0f, 200.0f, 500.0f, 500.0f);
 
     const float targetWidth = 1024.0f;
     const float targetHeight = 768.0f;
@@ -39,18 +39,58 @@ public class MenuLogic : MonoBehaviour {
         Matrix4x4 matrix = GUI.matrix;
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, scale);
 
+        GUILayout.BeginArea(new Rect(50.0f, 50.0f, 500.0f, 300.0f));
+        GUILayout.Label("Quick tutorial:");
+        GUILayout.Label("Move the red cube to the green one.");
+        GUILayout.Label("");
+        GUILayout.Label("Controls:");
+        GUILayout.Label("Arrow keys - move the red cube up, down, left or right.");
+        GUILayout.Label("WSAD - move around the big cube.");
+        GUILayout.Label("QE - rotate the big cube.");
+        GUILayout.Label("Space - return to the default view.");
+        GUILayout.EndArea();
+
         GUILayout.BeginArea(innerArea);
-        for (int i = 0; i < levelManager.levels.Length; i++) {
-            GameObject level = levelManager.levels[i];
-                if (GUILayout.Button(level.name)) {
+
+        if (levelManager.currentLevelPack == null) {
+            GUILayout.BeginHorizontal(GUILayout.MaxWidth(500.0f));
+            for (int i = 0; i < levelManager.levelPacks.Count; i++) {
+                LevelPack levelPack = levelManager.levelPacks[i];
+                if (GUILayout.Button(levelPack.packName, skin.customStyles[0])) {
                     iTween.Stop();
                     buttonSound.Play();
 
-                    levelManager.SetCurrentLevel(i);
-                    Object.DontDestroyOnLoad(levelManager);
-                    Invoke("LoadGameLevel", 0.5f);
+                    levelManager.setCurrentLevelPack(levelPack);
                 }
             }
+            GUILayout.EndHorizontal();
+        } else {
+            if (GUILayout.Button("Back", skin.customStyles[0])) {
+                levelManager.setCurrentLevelPack(null);
+            } else {
+                int size = levelManager.currentLevelPack.levels.Count;
+                for (int i = 0; i < size; i++) {
+                    int id = i + 1;
+                    if (id == 1 || id % 9 == 0) {
+                        GUILayout.BeginHorizontal(GUILayout.MaxWidth(100.0f));
+                    }
+
+                    if (GUILayout.Button("" + (i + 1), skin.customStyles[1])) {
+                        iTween.Stop();
+                        buttonSound.Play();
+
+                        levelManager.SetCurrentLevel(i);
+                        Object.DontDestroyOnLoad(levelManager);
+                        Invoke("LoadGameLevel", 0.5f);
+                    }
+
+                    if (id % 8 == 0 || i == size - 1) {
+                        GUILayout.EndHorizontal();
+                    }
+                }
+            }
+        }
+
         GUILayout.EndArea();
 
         // Restore matirx
