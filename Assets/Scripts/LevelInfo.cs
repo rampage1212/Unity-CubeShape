@@ -7,17 +7,12 @@ public class LevelInfo {
 
     public Cube playerCube;
     public Cube finishCube;
-    public Cube[] cubes;
-    //public List<Cube> cubes { get; private set; }
+    public List<Cube> cubes { get; private set; }
 
-    public LevelInfo(Cube player, Cube finish) {
-        playerCube = player;
-        finishCube = finish;
-      //  cubes = new List<Cube>();
-    }
-
-    public void AddCube(Cube cube) {
-        //cubes.Add(cube);
+    public LevelInfo() {
+        if (cubes == null) {
+            cubes = new List<Cube>();
+        }
     }
 }
 
@@ -26,10 +21,10 @@ public class Cube {
 
     public int x, y, z;
 
-    public Cube(int _x, int _y, int _z) {
-        x = _x;
-        y = _y;
-        z = _z;        
+    public Cube(Vector3 position) {
+        x = (int) Mathf.Round(position.x);
+        y = (int) Mathf.Round(position.y);
+        z = (int) Mathf.Round(position.z);
     }
 
     public Vector3 position() {

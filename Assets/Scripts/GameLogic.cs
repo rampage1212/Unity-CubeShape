@@ -45,6 +45,10 @@ public class GameLogic : MonoBehaviour {
 
         finishCube = Instantiate(finishCubePrefab, level.finishCube.position(), Quaternion.identity) as GameObject;
 
+        foreach (Cube standardCube in level.cubes) {
+            cubes.Add(Instantiate(cubePrefab, standardCube.position(), Quaternion.identity) as GameObject);
+        }
+
         playerControls = playerCube.GetComponent<PlayerControls>();
         startPosition = playerCube.transform.position;
         mapCenter = new Vector3(0.0f, 3.0f, 0.0f);
