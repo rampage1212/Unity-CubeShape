@@ -14,7 +14,14 @@ public class LevelManager : MonoBehaviour {
 	void Start() {
         levelPacks = new List<LevelPack>();
 
-        foreach (string packName in Directory.GetDirectories("Assets\\Levels")) {
+        String directory;
+        #if UNITY_EDITOR 
+            directory = "Build\\Levels";
+        #else
+            directory = "Levels";
+        #endif
+
+        foreach (string packName in Directory.GetDirectories(directory)) {
             // Get the name of the pack
             String[] words = packName.Split('\\');
             LevelPack pack = new LevelPack(words[words.Length - 1]);
