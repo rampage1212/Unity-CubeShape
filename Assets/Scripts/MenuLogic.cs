@@ -4,7 +4,6 @@ using System.Collections;
 public class MenuLogic : MonoBehaviour {
 
     public GUISkin skin;
-    public AudioSource buttonSound;
 
     private Rect innerArea = new Rect(500.0f, 200.0f, 500.0f, 500.0f);
 
@@ -56,16 +55,18 @@ public class MenuLogic : MonoBehaviour {
             GUILayout.BeginHorizontal(GUILayout.MaxWidth(500.0f));
             for (int i = 0; i < levelManager.levelPacks.Count; i++) {
                 LevelPack levelPack = levelManager.levelPacks[i];
-                if (GUILayout.Button(levelPack.packName, skin.customStyles[0])) {
+                if (CubeGUI.Button(GUILayout.Button(levelPack.packName, skin.customStyles[0]))) {
                     iTween.Stop();
-                    buttonSound.Play();
-
                     levelManager.setCurrentLevelPack(levelPack);
                 }
             }
             GUILayout.EndHorizontal();
+            if (CubeGUI.Button(GUILayout.Button("Level Editor"))) {
+                iTween.Stop();
+                Invoke("LoadLevelEditor", 0.5f);
+            }
         } else {
-            if (GUILayout.Button("Back", skin.customStyles[0])) {
+            if (CubeGUI.Button(GUILayout.Button("Back", skin.customStyles[0]))) {
                 levelManager.setCurrentLevelPack(null);
             } else {
                 int size = levelManager.currentLevelPack.levels.Count;
@@ -75,12 +76,10 @@ public class MenuLogic : MonoBehaviour {
                         GUILayout.BeginHorizontal(GUILayout.MaxWidth(100.0f));
                     }
 
-                    if (GUILayout.Button("" + (i + 1), skin.customStyles[1])) {
+                    if (CubeGUI.Button(GUILayout.Button("" + (i + 1), skin.customStyles[1]))) {
                         iTween.Stop();
-                        buttonSound.Play();
-
                         levelManager.SetCurrentLevel(i);
-                        Object.DontDestroyOnLoad(levelManager);
+                        
                         Invoke("LoadGameLevel", 0.5f);
                     }
 
@@ -99,5 +98,9 @@ public class MenuLogic : MonoBehaviour {
 
     void LoadGameLevel() {
         Application.LoadLevel("Game");
+    }
+
+    void LoadLevelEditor() {
+        Application.LoadLevel("LevelEditor");
     }
 }

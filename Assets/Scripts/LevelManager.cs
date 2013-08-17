@@ -11,17 +11,15 @@ public class LevelManager : MonoBehaviour {
 
     public int currentLevelID { get; private set; }
 
+    void Awake() {
+        // fixme
+        GameObject.DontDestroyOnLoad(gameObject);
+    }
+
 	void Start() {
         levelPacks = new List<LevelPack>();
 
-        String directory;
-        #if UNITY_EDITOR 
-            directory = "Build\\Levels";
-        #else
-            directory = "Levels";
-        #endif
-
-        foreach (string packName in Directory.GetDirectories(directory)) {
+        foreach (string packName in Directory.GetDirectories(Application.streamingAssetsPath + "/Levels")) {
             // Get the name of the pack
             String[] words = packName.Split('\\');
             LevelPack pack = new LevelPack(words[words.Length - 1]);
