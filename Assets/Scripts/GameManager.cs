@@ -3,14 +3,18 @@ using System.Collections;
 
 public class GameManager : MonoBehaviour {
 
-    public static GameManager logic { get; private set; }
+    public static GameManager instance { get; private set; }
 
     void Awake() {
         GameObject.DontDestroyOnLoad(gameObject);
     }
 
     void Start() {
-        logic = GameObject.Find("GameManager").GetComponent<GameManager>();
+        instance = GameObject.Find("GameManager").GetComponent<GameManager>();
+    }
+
+    public AudioSource PlayAudio(AudioClip clip) {
+        return PlayAudio(clip, Camera.main.transform);
     }
 
     public AudioSource PlayAudio(AudioClip clip, Transform emitter, float volume = 1.0f, float pitch = 1.0f) {

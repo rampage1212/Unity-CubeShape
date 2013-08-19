@@ -4,13 +4,12 @@ using System.Collections.Generic;
 public class GameLogic : MonoBehaviour {
 
     public GUISkin HUDSkin;
-    public AudioSource completeSound;
+
+    private AudioClip completeSound;
 
     public GameObject playerCubePrefab;
     public GameObject finishCubePrefab;
-    public GameObject cubePrefab;
-
-    private LevelManager levelManager;
+    public GameObject standardCubePrefab;
     
     // Player stuff
     public Transform playerCube { get; private set; }
@@ -20,37 +19,53 @@ public class GameLogic : MonoBehaviour {
     private GameObject finishCube;
     private List<GameObject> cubes;
 
+    // Moves counter
+    public int movesCount { get; private set; }
+
     private Vector3 originalCameraPosition;
-    private Vector3 startPosition;
     private Vector3 mapCenter;
 
-	void Start() {
-        originalCameraPosition = Camera.main.transform.position;
-        cubes = new List<GameObject>();
+    private LevelManager levelManager;
 
+	void Start() {
         if (GameObject.Find("LevelManager") != null) {
+            originalCameraPosition = Camera.main.transform.position;
+            cubes = new List<GameObject>();
+
+            completeSound = Resources.Load("complete") as AudioClip;
+
             levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
             InitializeLevel(levelManager.CurrentLevel());
+        } else {
+            Application.LoadLevel("Menu");
         }
 	}
 
     void InitializeLevel(LevelInfo level) {
+        ResetMovesCount();
+
         // Restore original camera position
         Camera.main.transform.position = originalCameraPosition;
         Camera.main.transform.rotation = Quaternion.identity;
         
+        // Instantiate cubes and set their parent
+        GameObject levelParent = GameObject.Find("Level");
+
         GameObject playerObject = Instantiate(playerCubePrefab, 
             level.playerCube.position(), Quaternion.identity) as GameObject;
+        playerObject.transform.parent = levelParent.transform;
         playerCube = playerObject.transform;
 
         finishCube = Instantiate(finishCubePrefab, level.finishCube.position(), Quaternion.identity) as GameObject;
+        finishCube.transform.parent = levelParent.transform;
 
         foreach (Cube standardCube in level.cubes) {
-            cubes.Add(Instantiate(cubePrefab, standardCube.position(), Quaternion.identity) as GameObject);
+            GameObject cube = Instantiate(standardCubePrefab, standardCube.position(), Quaternion.identity) as GameObject;
+            cube.transform.parent = levelParent.transform;
+            cubes.Add(cube);
         }
 
         playerControls = playerCube.GetComponent<PlayerControls>();
-        startPosition = playerCube.transform.position;
         mapCenter = new Vector3(0.0f, 3.0f, 0.0f);
     }
 
@@ -63,10 +78,10 @@ public class GameLogic : MonoBehaviour {
             GUILayout.Label("Test Level");
         }
 
-        GUILayout.Label("Moves: " + playerControls.movesCount);
+        GUILayout.Label("Moves: " + movesCount);
     }
-	
-	void Update() {
+
+    void Update() {
         if (playerCube == null) {
             return;
         }
@@ -74,16 +89,17 @@ public class GameLogic : MonoBehaviour {
         // Player out of bounds
         if (Vector3.Distance(playerCube.transform.position, mapCenter) > 6.0f) {
             iTween.Stop(playerCube.gameObject);
-            playerControls.resetMovesCount();
-            playerControls.deathSound.Play();
-            playerCube.transform.position = startPosition;
+            ResetMovesCount();
+            playerControls.AfterDeath();
         }
 
         // Player reached the finish
         if (playerControls.finished &&
             iTween.Count(playerCube.gameObject) == 0) {
-            completeSound.Play();
+            // Play the finish sound
+            GameManager.instance.PlayAudio(completeSound);
 
+            // Clear the level
             Destroy(playerCube.gameObject);
             Destroy(finishCube);
 
@@ -93,8 +109,17 @@ public class GameLogic : MonoBehaviour {
             cubes.Clear();
 
             if (levelManager != null) {
+                // Load next level
                 InitializeLevel(levelManager.NextLevel());
             }
         }
-	}
+    }
+
+    public void ResetMovesCount() {
+        movesCount = 0;
+    }
+
+    public void IncreaseMovesCount() {
+        movesCount++;
+    }
 }

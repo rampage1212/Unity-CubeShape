@@ -3,30 +3,35 @@ using System.Collections;
 
 public class PlayerControls : MonoBehaviour {
 
-    const float animationSpeed = 15.0f;
-    const int mapSize = 10;
-
-    public AudioSource hitSound;
-    public AudioSource deathSound;
-    public Vector3 movement;
-
-    public int movesCount { get; private set; }
-
+    private Vector3 startPosition;
     public bool finished { get; private set; }
+    
+    private AudioClip hitSound;
+    private AudioClip deathSound;
+
+    const float animationSpeed = 15.0f;
+    const int mapSize = 10; // TO-DO: this should not be hardcoded
+
+    private GameLogic game;
 
 	void Start() {
-        movement = Vector3.zero;
-        movesCount = 0;
+        startPosition = transform.position;
+        hitSound = Resources.Load("hit") as AudioClip;
+        deathSound = Resources.Load("death") as AudioClip;
+
+        game = GameObject.Find("GameLogic").GetComponent<GameLogic>();
 	}
 
 	void Update() {
 
+        // If not moving at the moment, check input
         if (!finished && iTween.Count(gameObject) == 0
             && iTween.Count(Camera.main.gameObject) == 0) {
-            // if not moving at the moment
+            
             Transform direction = Camera.main.transform;
-            movement = Vector3.zero;
+            Vector3 movement = Vector3.zero;
 
+            // Handle Cube movement
             if (Input.GetKeyDown(KeyCode.LeftArrow)) {
                 movement = -direction.right;
             } else if (Input.GetKeyDown(KeyCode.RightArrow)) {
@@ -37,25 +42,29 @@ public class PlayerControls : MonoBehaviour {
                 movement = -direction.up;
             }
 
-            if (!movement.Equals(Vector3.zero)) {
+            // If there was any input, move the cube
+            if (!movement.Equals(Vector3.zero)) {                           
                 int i;
-                Collider[] colliders;
                 for (i = 1; i <= mapSize; i++) {
-                    colliders = Physics.OverlapSphere(transform.position + movement * i, 0.1f);
+                    Collider[] colliders = Physics.OverlapSphere(transform.position + movement * i, 0.1f);
                     if (colliders.Length > 0) {
                         // Collision with FinishCube
                         if (colliders[0].gameObject.tag == "FinishCube") {
                             finished = true;
                         }
+
+                        // Decrease the amount of fields to go, so our Cube will stop just before its collider
                         i--;
                         break;
                     }
                 }
 
+                // Move the Cube
                 if (i > 0) {
-                    increaseMovesCount();
+                    game.IncreaseMovesCount();
                     iTween.MoveTo(gameObject, iTween.Hash("position", transform.position + movement * i,
-                        "speed", animationSpeed, "easetype", "linear",
+                        "speed", animationSpeed, 
+                        "easetype", "linear",
                         "onComplete", "AfterMovement"));
                 }
             }
@@ -63,15 +72,13 @@ public class PlayerControls : MonoBehaviour {
 	}
 
     IEnumerable AfterMovement() {
-        hitSound.Play();
+        // Play the hit sound
+        GameManager.instance.PlayAudio(hitSound);
         return null;
     }
 
-    public void resetMovesCount() {
-        movesCount = 0;
-    }
-
-    public void increaseMovesCount() {
-        movesCount++;
+    public void AfterDeath() {
+        GameManager.instance.PlayAudio(deathSound);
+        transform.position = startPosition;
     }
 }
