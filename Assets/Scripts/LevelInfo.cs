@@ -5,6 +5,7 @@ using System.Collections.Generic;
 [Serializable]
 public class LevelInfo {
 
+    public int size;
     public Cube playerCube;
     public Cube finishCube;
     public List<Cube> cubes { get; private set; }

@@ -7,20 +7,50 @@ public class LayerBehaviour : MonoBehaviour {
     public int layerID;
 
 	void Start() {
-        List<GameObject> cubes = new List<GameObject>();
 
-        // Instantiate cubes
-        foreach (Transform dummy in transform) {
-            GameObject newCube = Instantiate(cubePrefab, dummy.transform.position, Quaternion.identity) as GameObject;
-            cubes.Add(newCube);
-            Destroy(dummy.gameObject);
-        }
-
-        // Add cubes as a child node
-        foreach (GameObject cube in cubes) {
-            cube.transform.parent = transform;
-        }
 	}
+
+    public void SpawnCubes() {
+        int levelSize = Camera.main.GetComponent<LevelEditorLogic>().size;
+       
+        int half = Mathf.FloorToInt(levelSize / 2);
+        int from, to;
+        if (levelSize % 2 == 0) {
+            from = -(half - 1);
+            to = half;
+        } else {
+            from = -half;
+            to = half;
+        }
+
+        foreach (Transform cube in transform) {
+            Destroy(cube);
+        }
+
+        for (int x = from; x <= to; x++) {
+            for (int z = from; z <= to; z++) {
+                GameObject cube = Instantiate(cubePrefab, new Vector3(x, layerID, z), Quaternion.identity) as GameObject;
+                cube.transform.parent = transform;
+            }
+        }
+    }
+
+    public void Resize(int oldSize) {
+        int levelSize = Camera.main.GetComponent<LevelEditorLogic>().size;
+        int half = Mathf.FloorToInt(levelSize / 2);
+
+        // Add cubes
+        if (levelSize > oldSize) {
+
+        } else { // Remove cubes
+            foreach (Transform cube in transform) {
+                if (Mathf.Abs(cube.position.x) > half ||
+                    Mathf.Abs(cube.position.z) > half) {
+                        Destroy(cube.gameObject);
+                }
+            }
+        }
+    }
 
     public void MarkHidden(bool hidden) {
         foreach (Transform cube in transform) {
@@ -33,8 +63,4 @@ public class LayerBehaviour : MonoBehaviour {
             cube.GetComponent<CubeBehaviour>().MarkLocked(locked);
         }
     }
-
-	void Update() {
-	
-	}
 }

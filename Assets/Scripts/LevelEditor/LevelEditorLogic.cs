@@ -6,10 +6,12 @@ using System.Collections.Generic;
 
 public class LevelEditorLogic : MonoBehaviour {
 
-    public const int LAYERS_COUNT = 7;
+    public const int DEFAULT_LAYERS_COUNT = 7;
 
+    public GameObject layerPrefab;
     public GUIStyle layersSelectionStyle;
-    public GameObject[] layers;
+
+    private Dictionary<int, GameObject> layers;
 
     private Transform workplace;
 
@@ -19,38 +21,54 @@ public class LevelEditorLogic : MonoBehaviour {
 
     private Vector3 oldPosition;
     private Quaternion oldRotation;
+
+    public int size { get; private set; }
+    private int newSize;
+
     private bool ortho;
     public float speed = 5.0f;
 
     // GUI stuff
     private Rect menuRect = new Rect(50, 60, 150, 100);
     private Rect toolsRect = new Rect(50, 180, 150, 75);
-    private Rect miscRect = new Rect(50, 280, 150, 75);
+    private Rect sizeRect = new Rect(50, 270, 150, 50);
+    private Rect miscRect = new Rect(50, 350, 150, 50);
     private Rect layersRect = new Rect(800, 120, 150, 200);
 
     public int toolsSelection { get; private set; }
     private string[] toolsSelections = {"Start Cube", "Finish Cube", "Standard Cube"};
 
     public int activeLayer { get; private set; }
-    private int layersSelection = LAYERS_COUNT - 1;
-    private string[] layersSelections = { "7", "6", "5", "4", "3", "2", "1" };
-    private bool[] layersHidden = new bool[LAYERS_COUNT];
-    private bool[] layersLocked = new bool[LAYERS_COUNT];
+    private int layersSelection = DEFAULT_LAYERS_COUNT - 1;
+    private string[] layersSelectionTexts;
 
-    private bool[] layersHiddenTest = new bool[LAYERS_COUNT];
-    private bool[] layersLockedTest = new bool[LAYERS_COUNT];
+    private Dictionary<int, bool> layersHidden;
+    private Dictionary<int, bool> layersLocked;
+
+    private Dictionary<int, bool> layersHiddenTest;
+    private Dictionary<int, bool> layersLockedTest;
 
     private string levelName = "test";
     private string directory;
 
     void Start() {
+        layers = new Dictionary<int, GameObject>();
+
+        layersHidden = new Dictionary<int, bool>();
+        layersLocked = new Dictionary<int, bool>();
+        layersHiddenTest = new Dictionary<int, bool>();
+        layersLockedTest = new Dictionary<int, bool>();
+
         levelInfo = new LevelInfo();
         workplace = GameObject.Find("Workplace").transform;
+        directory = Application.streamingAssetsPath + "/Levels/";
+
+        // Initialize layers        
+        SetLevelSize(DEFAULT_LAYERS_COUNT);
+        newSize = size;
 
         activeLayer = -1;
         ActivateLayer(0);
-
-        directory = Application.streamingAssetsPath + "/Levels/";
     }
 
     void OnGUI() {
@@ -114,10 +132,17 @@ public class LevelEditorLogic : MonoBehaviour {
             toolsSelection = GUILayout.SelectionGrid(toolsSelection, toolsSelections, 1);
         GUILayout.EndArea();
 
+        // Layers size
+        GUI.Box(sizeRect, "");
+        GUILayout.BeginArea(sizeRect);
+            GUILayout.Label("Level size: " + newSize);
+            newSize = (int) GUILayout.HorizontalSlider(newSize, 3, 10, GUILayout.Width(140));            
+        GUILayout.EndArea();
+
         GUI.Box(miscRect, "");
         GUILayout.BeginArea(miscRect);
             if (CubeGUI.Button(GUILayout.Button("Main Menu"))) {
-                Application.LoadLevel("Menu");
+                Invoke("BackToMenu", 0.5f);
             }
         GUILayout.EndArea();
 
@@ -125,10 +150,10 @@ public class LevelEditorLogic : MonoBehaviour {
         GUILayout.BeginArea(layersRect);
             GUILayout.Label("Layers");
             GUILayout.BeginHorizontal();
-                layersSelection = GUILayout.SelectionGrid(layersSelection, layersSelections, 1, layersSelectionStyle);
+                layersSelection = GUILayout.SelectionGrid(layersSelection, layersSelectionTexts, 1, layersSelectionStyle);
 
                 GUILayout.BeginVertical();
-                for (int i = 0; i < LAYERS_COUNT; i++) {
+                for (int i = 0; i < layers.Count; i++) {
                     GUILayout.BeginHorizontal();
                     layersHidden[i] = GUILayout.Toggle(layersHidden[i], Resources.Load("eye") as Texture);
                     layersLocked[i] = GUILayout.Toggle(layersLocked[i], Resources.Load("padlock") as Texture);
@@ -202,20 +227,25 @@ public class LevelEditorLogic : MonoBehaviour {
         }
 
         // Layers
-        if (((layersSelections.Length-1) - layersSelection) != activeLayer) {
-            ActivateLayer((layersSelections.Length - 1) - layersSelection);
+        if (((layersSelectionTexts.Length-1) - layersSelection) != activeLayer) {
+            ActivateLayer((layersSelectionTexts.Length - 1) - layersSelection);
+        }
+
+        // Layers size
+        if (newSize != size) {
+            SetLevelSize(newSize);
         }
 
         // Layers hidden or locked
-        for (int i = 0; i < LAYERS_COUNT; i++) {
+        for (int i = 0; i < layers.Count; i++) {
             if (layersHidden[i] != layersHiddenTest[i]) {
                 layersHiddenTest[i] = layersHidden[i];
-                layers[LAYERS_COUNT-1 - i].GetComponent<LayerBehaviour>().MarkHidden(layersHidden[i]);
+                layers[layers.Count-1 - i].GetComponent<LayerBehaviour>().MarkHidden(layersHidden[i]);
             }
 
             if (layersLocked[i] != layersLockedTest[i]) {
                 layersLockedTest[i] = layersLocked[i];
-                layers[LAYERS_COUNT-1 - i].GetComponent<LayerBehaviour>().MarkLocked(layersLocked[i]);
+                layers[layers.Count-1 - i].GetComponent<LayerBehaviour>().MarkLocked(layersLocked[i]);
             }
         }
 
@@ -295,20 +325,20 @@ public class LevelEditorLogic : MonoBehaviour {
     }
 
     void ActivateLayer(int layerID) {
-        if (layerID < 0 || layerID > layers.Length-1) {
+        if (layerID < 0 || layerID > layers.Count-1) {
             return;
         }
 
-        if (!layersLocked[LAYERS_COUNT - 1 - layerID] && !layersHidden[LAYERS_COUNT - 1 - layerID]) {
+        if (!layersLocked[layers.Count - 1 - layerID] && !layersHidden[layers.Count - 1 - layerID]) {
             // Hide previous layer
-            if (activeLayer > -1) {
+            if (activeLayer > -1 && activeLayer < layers.Count) {
                 foreach (Transform cube in layers[activeLayer].transform) {
                     cube.GetComponent<CubeBehaviour>().MarkTransparent();
                 }
             }
 
             activeLayer = layerID;
-            layersSelection = (layersSelections.Length - 1) - layerID;
+            layersSelection = (layersSelectionTexts.Length - 1) - layerID;
 
             // Show current layer
             foreach (Transform cube in layers[activeLayer].transform) {
@@ -325,10 +355,55 @@ public class LevelEditorLogic : MonoBehaviour {
         }
     }
 
+    void SetLevelSize(int sizeToSet) {
+        int oldSize = size;
+        size = sizeToSet;
+
+        // Add layers
+        if (sizeToSet > oldSize) {
+            GameObject layersParent = GameObject.Find("Layers");
+            for (int y = oldSize; y < sizeToSet; y++) {
+                GameObject layer = Instantiate(layerPrefab, new Vector3(0, y, 0), Quaternion.identity) as GameObject;
+                layer.transform.parent = layersParent.transform;
+                layer.GetComponent<LayerBehaviour>().layerID = y;
+                layer.GetComponent<LayerBehaviour>().SpawnCubes();
+                layers.Add(y, layer);
+
+                layersHidden.Add(y, false);
+                layersHiddenTest.Add(y, false);
+                layersLocked.Add(y, false);
+                layersLockedTest.Add(y, false);
+            }
+        } else { // Remove layers
+            for (int y = oldSize - 1; y >= sizeToSet; y--) {
+                Destroy(layers[y]);
+                layers.Remove(y);
+                layersHidden.Remove(y);
+                layersHiddenTest.Remove(y);
+                layersLocked.Remove(y);
+                layersLockedTest.Remove(y);
+            }
+        }
+
+        // Update the size of existing layers
+        for (int i = 0; i < (sizeToSet > oldSize ? oldSize : size); i++) {
+            layers[i].GetComponent<LayerBehaviour>().Resize(oldSize);
+        }
+        
+        // Update layers selection texts
+        layersSelectionTexts = new string[size];
+        for (int i = 0; i < size; i++) {
+            layersSelectionTexts[i] = "" + (size - i);
+        }
+
+        // Activate bottom layer
+        ActivateLayer(0);
+    }
+
     void NewLevel() {
         levelInfo = new LevelInfo();
 
-        foreach (GameObject layer in layers) {
+        foreach (GameObject layer in layers.Values) {
             foreach (Transform cube in layer.transform) {
                 cube.GetComponent<CubeBehaviour>().MarkOccupied(false);
                 cube.GetComponent<CubeBehaviour>().MarkTransparent();
@@ -348,5 +423,9 @@ public class LevelEditorLogic : MonoBehaviour {
         }
 
         return null;
+    }
+
+    void BackToMenu() {
+        Application.LoadLevel("Menu");
     }
 }
