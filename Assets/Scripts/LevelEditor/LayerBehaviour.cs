@@ -36,7 +36,6 @@ public class LayerBehaviour : MonoBehaviour {
 
     public void Resize(int oldSize) {
         int levelSize = Camera.main.GetComponent<LevelEditorLogic>().size;
-        int half = Mathf.FloorToInt(levelSize / 2);
 
         // Add cubes
         if (levelSize > oldSize) {
@@ -88,7 +87,8 @@ public class LayerBehaviour : MonoBehaviour {
     }
 
     private void SpawnCube(int x, int z) {
-        GameObject cube = Instantiate(cubePrefab, Vector3.zero, Quaternion.identity) as GameObject;
+        GameObject cube = Instantiate(cubePrefab, new Vector3(x, layerID, z), Quaternion.identity) as GameObject;
+        cube.GetComponent<CubeBehaviour>().SetCube(x, layerID, z);
         cube.transform.parent = transform;
         cube.transform.localPosition = new Vector3(x, 0, z);
         cube.transform.localEulerAngles = Vector3.zero;

@@ -22,13 +22,9 @@ public class CubeBehaviour : MonoBehaviour {
 
     private Material markedMaterial;
 
-	void Start() {
-        cube = new Cube(transform.position);
-	}
-
-	void Update() {
-	
-	}
+    public void SetCube(int x, int y, int z) {
+        cube = new Cube(new Vector3(x, y, z));
+    }
         
     void OnMouseOver() {
         if (occupied) {

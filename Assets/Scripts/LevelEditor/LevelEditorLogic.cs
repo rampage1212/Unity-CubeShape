@@ -51,8 +51,11 @@ public class LevelEditorLogic : MonoBehaviour {
     private GameObject border;
     private Vector3 borderOrigin;
     private Vector3 borderStep;
+    private Vector3 borderOffset;
 
-    private string levelName = "test";
+    private Vector3 cameraStep = new Vector3(0, 1, -2);
+
+    private string levelName = "Easy/1";
     private string directory;
 
     void Start() {
@@ -63,9 +66,11 @@ public class LevelEditorLogic : MonoBehaviour {
         layersHiddenTest = new Dictionary<int, bool>();
         layersLockedTest = new Dictionary<int, bool>();
 
+        // Border settings
         border = GameObject.Find("Border");
         borderOrigin = border.transform.localScale;
         borderStep = borderOrigin / DEFAULT_LAYERS_COUNT;
+        borderOffset = new Vector3(0.5f, 0.15f, 0.5f);
 
         levelInfo = new LevelInfo();
         workplace = GameObject.Find("Workplace").transform;
@@ -102,16 +107,22 @@ public class LevelEditorLogic : MonoBehaviour {
                         // Load level from file
                         levelInfo = (LevelInfo) formatter.Deserialize(stream);
 
+                        // Apply level size (will be changed by Update)
+                        newSize = levelInfo.size;
+
+                        // Load Player Cube
                         if (levelInfo.playerCube != null) {
                             playerCube = RestoreCubeAt(levelInfo.playerCube.position(), CubeMaterials.PLAYER_CUBE);
                             levelInfo.playerCube = playerCube.GetComponent<CubeBehaviour>().cube;
                         }
 
+                        // Load Finish Cube
                         if (levelInfo.finishCube != null) {
                             finishCube = RestoreCubeAt(levelInfo.finishCube.position(), CubeMaterials.FINISH_CUBE);
                             levelInfo.finishCube = finishCube.GetComponent<CubeBehaviour>().cube;
                         }
 
+                        // Load Cubes
                         for (int i = 0; i < levelInfo.cubes.Count; i++) {
                             levelInfo.cubes[i] = RestoreCubeAt(levelInfo.cubes[i].position(), CubeMaterials.STANDARD_CUBE)
                                 .GetComponent<CubeBehaviour>().cube;
@@ -278,7 +289,7 @@ public class LevelEditorLogic : MonoBehaviour {
                     oldPosition = Camera.main.transform.position;
                     oldRotation = Camera.main.transform.rotation;
 
-                    newPosition = new Vector3(0, 16, 0);
+                    newPosition = new Vector3(0, layers[layers.Count-1].transform.localPosition.y + 10.0f, 0);
                     newRotation = new Vector3(90, 0, 0);
                 } else {
                     ortho = false;
@@ -371,11 +382,6 @@ public class LevelEditorLogic : MonoBehaviour {
 
         // Add layers
         if (sizeToSet > oldSize) {
-            // Border's scale
-            if (oldSize > 0) {
-                border.transform.localScale += borderStep * (sizeToSet - oldSize);
-            }
-
             GameObject layersParent = GameObject.Find("Layers");
             for (int y = oldSize; y < sizeToSet; y++) {
                 GameObject layer = Instantiate(layerPrefab, new Vector3(0, y, 0), Quaternion.identity) as GameObject;
@@ -392,9 +398,6 @@ public class LevelEditorLogic : MonoBehaviour {
                 layersLockedTest.Add(y, false);
             }
         } else { // Remove layers
-            // Border's scale
-            border.transform.localScale -= borderStep * (oldSize - sizeToSet);
-
             for (int y = oldSize - 1; y >= sizeToSet; y--) {
                 Destroy(layers[y]);
                 layers.Remove(y);
@@ -404,6 +407,9 @@ public class LevelEditorLogic : MonoBehaviour {
                 layersLockedTest.Remove(y);
             }
         }
+
+        // Update border's scale
+        UpdateBorderSize(oldSize);
 
         // Update the size of existing layers
         for (int i = 0; i < (sizeToSet > oldSize ? oldSize : size); i++) {
@@ -418,6 +424,31 @@ public class LevelEditorLogic : MonoBehaviour {
 
         // Activate bottom layer
         ActivateLayer(0);
+    }
+
+    void UpdateBorderSize(int oldSize) {
+        if (oldSize == 0) {
+            return;
+        }
+        
+        // Update scale
+        if (size > oldSize) {
+            border.transform.localScale += borderStep * (size - oldSize);
+            //Camera.main.transform.position += cameraStep * (size - oldSize);
+        } else {
+            border.transform.localScale -= borderStep * (oldSize - size);
+            //Camera.main.transform.position += cameraStep * (size - oldSize);
+        }
+
+        Camera.main.transform.LookAt(border.transform);
+        Camera.main.transform.position = border.transform.position + new Vector3(0, 9, -12);
+
+        // Update size
+        if (size % 2 == 0) {
+            border.transform.localPosition = borderOffset;
+        } else {
+            border.transform.localPosition = Vector3.zero;
+        }
     }
 
     void NewLevel() {
