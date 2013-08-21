@@ -33,7 +33,7 @@ public class LevelEditorLogic : MonoBehaviour {
     private Rect toolsRect = new Rect(50, 180, 150, 75);
     private Rect sizeRect = new Rect(50, 270, 150, 50);
     private Rect miscRect = new Rect(50, 350, 150, 50);
-    private Rect layersRect = new Rect(800, 120, 150, 200);
+    private Rect layersRect = new Rect(800, 120, 150, 275);
 
     public int toolsSelection { get; private set; }
     private string[] toolsSelections = {"Start Cube", "Finish Cube", "Standard Cube"};
@@ -48,6 +48,10 @@ public class LevelEditorLogic : MonoBehaviour {
     private Dictionary<int, bool> layersHiddenTest;
     private Dictionary<int, bool> layersLockedTest;
 
+    private GameObject border;
+    private Vector3 borderOrigin;
+    private Vector3 borderStep;
+
     private string levelName = "test";
     private string directory;
 
@@ -59,12 +63,17 @@ public class LevelEditorLogic : MonoBehaviour {
         layersHiddenTest = new Dictionary<int, bool>();
         layersLockedTest = new Dictionary<int, bool>();
 
+        border = GameObject.Find("Border");
+        borderOrigin = border.transform.localScale;
+        borderStep = borderOrigin / DEFAULT_LAYERS_COUNT;
+
         levelInfo = new LevelInfo();
         workplace = GameObject.Find("Workplace").transform;
         directory = Application.streamingAssetsPath + "/Levels/";
 
         // Initialize layers        
         SetLevelSize(DEFAULT_LAYERS_COUNT);
+        levelInfo.size = size;
         newSize = size;
 
         activeLayer = -1;
@@ -358,13 +367,21 @@ public class LevelEditorLogic : MonoBehaviour {
     void SetLevelSize(int sizeToSet) {
         int oldSize = size;
         size = sizeToSet;
+        levelInfo.size = size;
 
         // Add layers
         if (sizeToSet > oldSize) {
+            // Border's scale
+            if (oldSize > 0) {
+                border.transform.localScale += borderStep * (sizeToSet - oldSize);
+            }
+
             GameObject layersParent = GameObject.Find("Layers");
             for (int y = oldSize; y < sizeToSet; y++) {
                 GameObject layer = Instantiate(layerPrefab, new Vector3(0, y, 0), Quaternion.identity) as GameObject;
                 layer.transform.parent = layersParent.transform;
+                layer.transform.localPosition = new Vector3(0, y, 0);
+                layer.transform.localEulerAngles = Vector3.zero;
                 layer.GetComponent<LayerBehaviour>().layerID = y;
                 layer.GetComponent<LayerBehaviour>().SpawnCubes();
                 layers.Add(y, layer);
@@ -375,6 +392,9 @@ public class LevelEditorLogic : MonoBehaviour {
                 layersLockedTest.Add(y, false);
             }
         } else { // Remove layers
+            // Border's scale
+            border.transform.localScale -= borderStep * (oldSize - sizeToSet);
+
             for (int y = oldSize - 1; y >= sizeToSet; y--) {
                 Destroy(layers[y]);
                 layers.Remove(y);
