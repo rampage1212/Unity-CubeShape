@@ -116,8 +116,9 @@ public class LevelEditorLogic : MonoBehaviour {
                         // Load level from file
                         levelInfo = (LevelInfo) formatter.Deserialize(stream);
 
-                        // Apply level size (will be changed by Update)
+                        // Apply level size
                         newSize = levelInfo.size;
+                        SetLevelSize(newSize);
 
                         // Load Player Cube
                         if (levelInfo.playerCube != null) {
@@ -182,7 +183,7 @@ public class LevelEditorLogic : MonoBehaviour {
                 layersSelection = GUILayout.SelectionGrid(layersSelection, layersSelectionTexts, 1, layersSelectionStyle);
 
                 GUILayout.BeginVertical();
-                for (int i = 0; i < layers.Count; i++) {
+                for (int i = layers.Count - 1; i >= 0; i--) {
                     GUILayout.BeginHorizontal();
                     layersHidden[i] = GUILayout.Toggle(layersHidden[i], Resources.Load("eye") as Texture);
                     layersLocked[i] = GUILayout.Toggle(layersLocked[i], Resources.Load("padlock") as Texture);
@@ -269,12 +270,12 @@ public class LevelEditorLogic : MonoBehaviour {
         for (int i = 0; i < layers.Count; i++) {
             if (layersHidden[i] != layersHiddenTest[i]) {
                 layersHiddenTest[i] = layersHidden[i];
-                layers[layers.Count-1 - i].GetComponent<LayerBehaviour>().MarkHidden(layersHidden[i]);
+                layers[i].GetComponent<LayerBehaviour>().MarkHidden(layersHidden[i]);
             }
 
             if (layersLocked[i] != layersLockedTest[i]) {
                 layersLockedTest[i] = layersLocked[i];
-                layers[layers.Count-1 - i].GetComponent<LayerBehaviour>().MarkLocked(layersLocked[i]);
+                layers[i].GetComponent<LayerBehaviour>().MarkLocked(layersLocked[i]);
             }
         }
 
@@ -341,7 +342,7 @@ public class LevelEditorLogic : MonoBehaviour {
             return;
         }
 
-        if (!layersLocked[layers.Count - 1 - layerID] && !layersHidden[layers.Count - 1 - layerID]) {
+        if (!layersLocked[layerID] && !layersHidden[layerID]) {
             // Hide previous layer
             if (activeLayer > -1 && activeLayer < layers.Count) {
                 foreach (Transform cube in layers[activeLayer].transform) {
@@ -372,6 +373,8 @@ public class LevelEditorLogic : MonoBehaviour {
         size = sizeToSet;
         levelInfo.size = size;
 
+        int newLayer = activeLayer;
+
         // Add layers
         if (sizeToSet > oldSize) {
             GameObject layersParent = GameObject.Find("Layers");
@@ -383,7 +386,8 @@ public class LevelEditorLogic : MonoBehaviour {
                 layer.GetComponent<LayerBehaviour>().layerID = y;
                 layer.GetComponent<LayerBehaviour>().SpawnCubes();
                 layers.Add(y, layer);
-
+                //newLayer--;
+                
                 layersHidden.Add(y, false);
                 layersHiddenTest.Add(y, false);
                 layersLocked.Add(y, false);
@@ -393,12 +397,17 @@ public class LevelEditorLogic : MonoBehaviour {
             for (int y = oldSize - 1; y >= sizeToSet; y--) {
                 Destroy(layers[y]);
                 layers.Remove(y);
+                //newLayer++;
+
                 layersHidden.Remove(y);
                 layersHiddenTest.Remove(y);
                 layersLocked.Remove(y);
                 layersLockedTest.Remove(y);
             }
         }
+
+        // Update layers indicators
+        ShiftLayersIndicators();
 
         // Update border's scale
         UpdateBorderSize(oldSize);
@@ -414,8 +423,14 @@ public class LevelEditorLogic : MonoBehaviour {
             layersSelectionTexts[i] = "" + (size - i);
         }
 
-        // Activate bottom layer
-        ActivateLayer(0);
+        // Show current layer
+        if (newLayer > layers.Count - 1) {
+            newLayer = layers.Count - 1;
+        } else if (newLayer < 0) {
+            newLayer = 0;
+        }
+
+        ActivateLayer(newLayer);
     }
 
     void UpdateBorderSize(int oldSize) {
@@ -513,6 +528,21 @@ public class LevelEditorLogic : MonoBehaviour {
         float scale = border.transform.localScale.y;
         return new Vector3(0, border.transform.position.y + scale * 2 +
                         -cameraOrigin.z * (scale / borderBaseScale), 0);
+    }
+
+    private void ShiftLayersIndicators() {
+        for (int i = 0; i > layers.Count - 1; i++) {
+            layersHidden[i] = layersHidden[i + 1];
+            layersHiddenTest[i] = layersHiddenTest[i + 1];
+            layersLocked[i] = layersLocked[i + 1];
+            layersLockedTest[i] = layersLockedTest[i + 1];
+        }
+
+        for (int i = 0; i < layers.Count; i++) {
+            layers[i].GetComponent<LayerBehaviour>().MarkHidden(layersHidden[i]);
+            layers[i].GetComponent<LayerBehaviour>().MarkLocked(layersLocked[i]);
+        }
+
     }
 
     void BackToMenu() {
