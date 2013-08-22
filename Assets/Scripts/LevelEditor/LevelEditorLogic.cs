@@ -51,9 +51,13 @@ public class LevelEditorLogic : MonoBehaviour {
     private GameObject border;
     private Vector3 borderOrigin;
     private Vector3 borderStep;
-    private Vector3 borderOffset;
 
-    private Vector3 cameraStep = new Vector3(0, 1, -2);
+    private Vector3 layersOrigin;
+    private Vector3 layersOffset;
+
+    // Stuff needed for border re-scaling
+    private Vector3 cameraOrigin;
+    private float borderBaseScale;
 
     private string levelName = "Easy/1";
     private string directory;
@@ -70,7 +74,12 @@ public class LevelEditorLogic : MonoBehaviour {
         border = GameObject.Find("Border");
         borderOrigin = border.transform.localScale;
         borderStep = borderOrigin / DEFAULT_LAYERS_COUNT;
-        borderOffset = new Vector3(0.5f, 0.15f, 0.5f);
+
+        layersOrigin = GameObject.Find("Layers").transform.position;
+        layersOffset = new Vector3(0.5f, 0.05f, 0.5f);
+
+        cameraOrigin = Camera.main.transform.position;
+        borderBaseScale = border.transform.localScale.y;
 
         levelInfo = new LevelInfo();
         workplace = GameObject.Find("Workplace").transform;
@@ -281,24 +290,7 @@ public class LevelEditorLogic : MonoBehaviour {
   
         if (iTween.Count(gameObject) == 0) {
             if (Input.GetMouseButtonDown(2)) {
-                Vector3 newPosition;
-                Vector3 newRotation;
-
-                if (!ortho) {
-                    ortho = true;
-                    oldPosition = Camera.main.transform.position;
-                    oldRotation = Camera.main.transform.rotation;
-
-                    newPosition = new Vector3(0, layers[layers.Count-1].transform.localPosition.y + 10.0f, 0);
-                    newRotation = new Vector3(90, 0, 0);
-                } else {
-                    ortho = false;
-                    newPosition = oldPosition;
-                    newRotation = oldRotation.eulerAngles;
-                }
-
-                iTween.MoveTo(Camera.main.gameObject, iTween.Hash("position", newPosition, "time", 0.3f, "easetype", "linear"));
-                iTween.RotateTo(Camera.main.gameObject, iTween.Hash("rotation", newRotation, "time", 0.3f, "easetype", "linear"));
+                ToggleOrtho();    
             }
         }
 
@@ -427,27 +419,47 @@ public class LevelEditorLogic : MonoBehaviour {
     }
 
     void UpdateBorderSize(int oldSize) {
-        if (oldSize == 0) {
-            return;
-        }
-        
         // Update scale
-        if (size > oldSize) {
-            border.transform.localScale += borderStep * (size - oldSize);
-            //Camera.main.transform.position += cameraStep * (size - oldSize);
-        } else {
-            border.transform.localScale -= borderStep * (oldSize - size);
-            //Camera.main.transform.position += cameraStep * (size - oldSize);
+        if (oldSize > 0) {
+            if (size > oldSize) {
+                border.transform.localScale += borderStep * (size - oldSize);
+            } else {
+                border.transform.localScale -= borderStep * (oldSize - size);
+            }
+
+
+            // Update layers position
+            GameObject layers = GameObject.Find("Layers");
+            if (size % 2 == 0) {
+                layers.transform.localPosition = layersOrigin - layersOffset;
+            } else {
+                layers.transform.localPosition = layersOrigin;
+            }
         }
 
-        Camera.main.transform.LookAt(border.transform);
-        Camera.main.transform.position = border.transform.position + new Vector3(0, 9, -12);
+        // Update light range
+        border.GetComponentInChildren<Light>().range = border.transform.localScale.y;
 
-        // Update size
-        if (size % 2 == 0) {
-            border.transform.localPosition = borderOffset;
+        // Update camera position
+        Vector3 borderPosition = new Vector3(0, border.transform.localScale.y, 0f);
+        Vector3 newPosition = borderPosition +
+                cameraOrigin * (border.transform.localScale.y / borderBaseScale);
+
+        if (ortho) {
+            oldPosition = newPosition;
+            
+            // Rotation
+            GameObject tmp = new GameObject("tmp camera dummy");
+            tmp.transform.position = newPosition;
+            tmp.transform.LookAt(borderPosition);
+            oldRotation = tmp.transform.rotation;
+            Destroy(tmp);
+
+            Camera.main.transform.position = GetOrthoPosition();
+
         } else {
-            border.transform.localPosition = Vector3.zero;
+            Camera.main.transform.position = newPosition;
+            Camera.main.transform.LookAt(borderPosition);
         }
     }
 
@@ -474,6 +486,33 @@ public class LevelEditorLogic : MonoBehaviour {
         }
 
         return null;
+    }
+
+    private void ToggleOrtho() {
+        Vector3 newPosition;
+        Vector3 newRotation;
+
+        if (!ortho) {
+            ortho = true;
+            oldPosition = Camera.main.transform.position;
+            oldRotation = Camera.main.transform.rotation;
+
+            newPosition = GetOrthoPosition();
+            newRotation = new Vector3(90, 0, 0);
+        } else {
+            ortho = false;
+            newPosition = oldPosition;
+            newRotation = oldRotation.eulerAngles;
+        }
+
+        iTween.MoveTo(Camera.main.gameObject, iTween.Hash("position", newPosition, "time", 0.3f, "easetype", "linear"));
+        iTween.RotateTo(Camera.main.gameObject, iTween.Hash("rotation", newRotation, "time", 0.3f, "easetype", "linear"));
+    }
+
+    private Vector3 GetOrthoPosition() {
+        float scale = border.transform.localScale.y;
+        return new Vector3(0, border.transform.position.y + scale * 2 +
+                        -cameraOrigin.z * (scale / borderBaseScale), 0);
     }
 
     void BackToMenu() {
