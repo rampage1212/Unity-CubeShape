@@ -13,11 +13,8 @@ public class MenuLogic : MonoBehaviour {
     private LevelManager levelManager;
     private Vector3 scale;
 
-    private GameObject decorationCube;
-
 	void Start() {
         levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
-        decorationCube = GameObject.Find("DecorationCube");
 	}
 
     void OnGUI() {
