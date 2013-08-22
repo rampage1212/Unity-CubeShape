@@ -19,12 +19,6 @@ public class MenuLogic : MonoBehaviour {
         levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
         decorationCube = GameObject.Find("DecorationCube");
 	}
-	
-	void Update() {
-	    if (iTween.Count(decorationCube) == 0) {
-            iTween.RotateBy(decorationCube, iTween.Hash("y", 1.0f, "time", 7.0f, "easetype", "linear"));
-        }
-	}
 
     void OnGUI() {
         GUI.skin = skin;
