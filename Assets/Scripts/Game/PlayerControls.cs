@@ -62,10 +62,7 @@ public class PlayerControls : MonoBehaviour {
                         // Player out of the borders
                         else if (collision.CompareTag("ExitTrigger")) {
                             onComplete = "AfterDeath";
-                        }
-
-                        // Decrease the amount of fields to go, so our Cube will stop just before its collider
-                        if (!collision.CompareTag("ExitTrigger")) {
+                        } else {
                             i--;
                         }
                         break;
