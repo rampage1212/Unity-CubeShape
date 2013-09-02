@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public class LevelEditorLogic : MonoBehaviour {
 
-    public const int DEFAULT_LAYERS_COUNT = 7;
+    public static int DEFAULT_LAYERS_COUNT = 7;
 
     public GameObject layerPrefab;
     public GUIStyle layersSelectionStyle;
@@ -442,7 +442,6 @@ public class LevelEditorLogic : MonoBehaviour {
                 border.transform.localScale -= borderStep * (oldSize - size);
             }
 
-
             // Update layers position
             GameObject layers = GameObject.Find("Layers");
             if (size % 2 == 0) {
@@ -456,7 +455,7 @@ public class LevelEditorLogic : MonoBehaviour {
         border.GetComponentInChildren<Light>().range = border.transform.localScale.y;
 
         // Update camera position
-        Vector3 borderPosition = new Vector3(0, border.transform.localScale.y, 0f);
+        Vector3 borderPosition = new Vector3(0, border.transform.localScale.y, 0);
         Vector3 newPosition = borderPosition +
                 cameraOrigin * (border.transform.localScale.y / borderBaseScale);
 

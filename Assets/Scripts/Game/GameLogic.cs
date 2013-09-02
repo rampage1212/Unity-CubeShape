@@ -5,8 +5,6 @@ public class GameLogic : MonoBehaviour {
 
     public GUISkin HUDSkin;
 
-    private AudioClip completeSound;
-
     public GameObject playerCubePrefab;
     public GameObject finishCubePrefab;
     public GameObject standardCubePrefab;
@@ -22,17 +20,28 @@ public class GameLogic : MonoBehaviour {
     // Moves counter
     public int movesCount { get; private set; }
 
-    private Vector3 originalCameraPosition;
-    private Vector3 mapCenter;
+    private Vector3 cameraOrigin;
+    private Vector3 borderOrigin;
+
+    private Vector3 cubesOrigin;
+    private Vector3 cubesOffset;
+
+    public int levelSize { get; private set; }
+    public Vector3 mapCenter { get; private set; }
 
     private LevelManager levelManager;
 
+    private const float cameraDistance = 10.0f;
+
 	void Start() {
         if (GameObject.Find("LevelManager") != null) {
-            originalCameraPosition = Camera.main.transform.position;
-            cubes = new List<GameObject>();
+            cameraOrigin = Camera.main.transform.position;
+            borderOrigin = GameObject.Find("Border").transform.localScale;
 
-            completeSound = Resources.Load("complete") as AudioClip;
+            cubesOrigin = GameObject.Find("Cubes").transform.localPosition;
+            cubesOffset = new Vector3(0.5f, 0, 0.5f);
+
+            cubes = new List<GameObject>();
 
             levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
             InitializeLevel(levelManager.CurrentLevel());
@@ -45,28 +54,33 @@ public class GameLogic : MonoBehaviour {
         ResetMovesCount();
 
         // Restore original camera position
-        Camera.main.transform.position = originalCameraPosition;
+        Camera.main.transform.position = cameraOrigin;
         Camera.main.transform.rotation = Quaternion.identity;
         
+        // Set level size
+        SetLevelSize(level);
+
         // Instantiate cubes and set their parent
-        GameObject levelParent = GameObject.Find("Level");
+        GameObject cubesParent = GameObject.Find("Cubes");
 
         GameObject playerObject = Instantiate(playerCubePrefab, 
             level.playerCube.position(), Quaternion.identity) as GameObject;
-        playerObject.transform.parent = levelParent.transform;
+        playerObject.transform.parent = cubesParent.transform;
+        playerObject.transform.localPosition = level.playerCube.position();
         playerCube = playerObject.transform;
 
         finishCube = Instantiate(finishCubePrefab, level.finishCube.position(), Quaternion.identity) as GameObject;
-        finishCube.transform.parent = levelParent.transform;
+        finishCube.transform.parent = cubesParent.transform;
+        finishCube.transform.localPosition = level.finishCube.position();
 
         foreach (Cube standardCube in level.cubes) {
             GameObject cube = Instantiate(standardCubePrefab, standardCube.position(), Quaternion.identity) as GameObject;
-            cube.transform.parent = levelParent.transform;
+            cube.transform.parent = cubesParent.transform;
+            cube.transform.localPosition = standardCube.position();
             cubes.Add(cube);
         }
 
         playerControls = playerCube.GetComponent<PlayerControls>();
-        mapCenter = new Vector3(0.0f, 3.0f, 0.0f);
     }
 
     void OnGUI() {
@@ -81,38 +95,49 @@ public class GameLogic : MonoBehaviour {
         GUILayout.Label("Moves: " + movesCount);
     }
 
-    void Update() {
-        if (playerCube == null) {
-            return;
+    public void NextLevel() {
+        // Clear the level
+        Destroy(playerCube.gameObject);
+        Destroy(finishCube);
+
+        foreach (GameObject cube in cubes) {
+            Destroy(cube);
+        }
+        cubes.Clear();
+
+        if (levelManager != null) {
+            // Load next level
+            InitializeLevel(levelManager.NextLevel());
         }
 
-        // Player out of bounds
-        if (Vector3.Distance(playerCube.transform.position, mapCenter) > 6.0f) {
-            iTween.Stop(playerCube.gameObject);
-            ResetMovesCount();
-            playerControls.AfterDeath();
+    }
+
+    private void SetLevelSize(LevelInfo level) {
+        levelSize = level.size;
+        GameObject border = GameObject.Find("Border");
+
+        Vector3 borderStep = borderOrigin / LevelEditorLogic.DEFAULT_LAYERS_COUNT;
+        int steps = level.size - LevelEditorLogic.DEFAULT_LAYERS_COUNT;
+
+        border.transform.localScale = borderOrigin + borderStep * steps;
+
+        // Update cubes position
+        GameObject allCubes = GameObject.Find("Cubes");
+        if (level.size % 2 == 0) {
+            allCubes.transform.localPosition = cubesOrigin - cubesOffset;
+        } else {
+            allCubes.transform.localPosition = cubesOrigin;
         }
 
-        // Player reached the finish
-        if (playerControls.finished &&
-            iTween.Count(playerCube.gameObject) == 0) {
-            // Play the finish sound
-            GameManager.instance.PlayAudio(completeSound);
+        // Update camera position
+        Vector3 newPosition = border.renderer.bounds.center -
+            new Vector3(0, 0, border.renderer.bounds.center.y + level.size + 1.5f);
 
-            // Clear the level
-            Destroy(playerCube.gameObject);
-            Destroy(finishCube);
+        Camera.main.transform.position = newPosition;
+        Camera.main.transform.rotation = Quaternion.identity;
+        Camera.main.GetComponent<CameraControls>().SavePosition();
 
-            foreach (GameObject cube in cubes) {
-                Destroy(cube);
-            }
-            cubes.Clear();
-
-            if (levelManager != null) {
-                // Load next level
-                InitializeLevel(levelManager.NextLevel());
-            }
-        }
+        mapCenter = border.renderer.bounds.center;
     }
 
     public void ResetMovesCount() {
@@ -121,5 +146,13 @@ public class GameLogic : MonoBehaviour {
 
     public void IncreaseMovesCount() {
         movesCount++;
+    }
+
+    public bool Finished() {
+        if (playerControls == null) {
+            return true;
+        } else {
+            return playerControls.finished;
+        }
     }
 }

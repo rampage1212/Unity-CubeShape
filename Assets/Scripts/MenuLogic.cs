@@ -15,6 +15,7 @@ public class MenuLogic : MonoBehaviour {
 
 	void Start() {
         levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
+        levelManager.LoadLevelPacks();
 	}
 
     void OnGUI() {

@@ -8,16 +8,18 @@ public class PlayerControls : MonoBehaviour {
     
     private AudioClip hitSound;
     private AudioClip deathSound;
+    private AudioClip completeSound;
 
     const float animationSpeed = 15.0f;
-    const int mapSize = 10; // TO-DO: this should not be hardcoded
 
     private GameLogic game;
 
 	void Start() {
         startPosition = transform.position;
+
         hitSound = Resources.Load("hit") as AudioClip;
         deathSound = Resources.Load("death") as AudioClip;
+        completeSound = Resources.Load("complete") as AudioClip;
 
         game = GameObject.Find("GameLogic").GetComponent<GameLogic>();
 	}
@@ -43,18 +45,29 @@ public class PlayerControls : MonoBehaviour {
             }
 
             // If there was any input, move the cube
-            if (!movement.Equals(Vector3.zero)) {                           
+            if (!movement.Equals(Vector3.zero)) {
+                string onComplete = "AfterMovement";
+                
                 int i;
-                for (i = 1; i <= mapSize; i++) {
+                for (i = 1; i <= game.levelSize * 2; i++) {
                     Collider[] colliders = Physics.OverlapSphere(transform.position + movement * i, 0.1f);
                     if (colliders.Length > 0) {
+                        GameObject collision = colliders[0].gameObject;
+
                         // Collision with FinishCube
-                        if (colliders[0].gameObject.tag == "FinishCube") {
+                        if (collision.CompareTag("FinishCube")) {
                             finished = true;
+                            onComplete = "AfterFinish";
+                        }
+                        // Player out of the borders
+                        else if (collision.CompareTag("ExitTrigger")) {
+                            onComplete = "AfterDeath";
                         }
 
                         // Decrease the amount of fields to go, so our Cube will stop just before its collider
-                        i--;
+                        if (!collision.CompareTag("ExitTrigger")) {
+                            i--;
+                        }
                         break;
                     }
                 }
@@ -65,20 +78,27 @@ public class PlayerControls : MonoBehaviour {
                     iTween.MoveTo(gameObject, iTween.Hash("position", transform.position + movement * i,
                         "speed", animationSpeed, 
                         "easetype", "linear",
-                        "onComplete", "AfterMovement"));
+                        "onComplete", onComplete));
                 }
             }
         }
 	}
 
-    IEnumerable AfterMovement() {
+    void AfterMovement() {
         // Play the hit sound
         GameManager.instance.PlayAudio(hitSound);
-        return null;
     }
 
-    public void AfterDeath() {
+    void AfterDeath() {
+        iTween.Stop(gameObject);
         GameManager.instance.PlayAudio(deathSound);
         transform.position = startPosition;
+        game.ResetMovesCount();
+    }
+
+    void AfterFinish() {
+        // Play the finish sound
+        GameManager.instance.PlayAudio(completeSound);
+        game.NextLevel();
     }
 }

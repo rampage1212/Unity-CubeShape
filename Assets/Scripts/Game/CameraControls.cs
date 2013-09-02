@@ -14,18 +14,20 @@ public class CameraControls : MonoBehaviour {
     private GameLogic game;
 
 	void Start() {
-        originalPosition = transform.position;
-        // Set the distance from CubeBorder
-        cameraDistance = Mathf.Abs(originalPosition.z);
         game = GameObject.Find("GameLogic").GetComponent<GameLogic>();
 
         moveSound = Resources.Load("move") as AudioClip;
         rotateSound = Resources.Load("rotate") as AudioClip;
 	}
 
+    public void SavePosition() {
+        originalPosition = transform.position;
+        cameraDistance = Vector3.Distance(originalPosition, game.mapCenter);
+    }
+
 	void Update() { 
         // If the object is not moving, check for input
-        if (iTween.Count(gameObject) == 0) {
+        if (iTween.Count(gameObject) == 0 && !game.Finished()) {
             Vector3 movement = Vector3.zero;
             Vector3 rotation = Vector3.zero;
 
@@ -49,7 +51,7 @@ public class CameraControls : MonoBehaviour {
                 rotation.z = 0.25f;
             } else if (Input.GetKeyDown(KeyCode.Space)) {
                 // Return to the original position
-                if (!transform.position.Equals(originalPosition)) {
+                if ((transform.position - originalPosition).magnitude > 0.1f) {
                     iTween.MoveTo(gameObject, iTween.Hash("position", originalPosition,
                         "time", animationDuration, "easetype", "linear"));
                 }
@@ -65,8 +67,7 @@ public class CameraControls : MonoBehaviour {
             // If new position is set, translate
             if (!movement.Equals(Vector3.zero)) {
                 Vector3 newPosition = transform.position + movement * cameraDistance;
-                newPosition.Set(Mathf.Round(newPosition.x), Mathf.Round(newPosition.y), Mathf.Round(newPosition.z));
-
+                
                 iTween.MoveTo(gameObject, iTween.Hash("position", newPosition,
                     "time", animationDuration,
                     "easetype", "linear"));
