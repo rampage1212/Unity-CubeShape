@@ -418,25 +418,6 @@ public class LevelEditorLogic : MonoBehaviour {
                 layersHiddenTest.Remove(y);
                 layersLocked.Remove(y);
                 layersLockedTest.Remove(y);
-
-                // Remove unused cubes
-                /*for (int i = 0; i < levelInfo.cubes.Count; i++) {
-                    Cube cube = levelInfo.cubes[i];
-                    bool match = false;
-
-                    if (cube.y < layers.Count) {
-                        foreach (Transform cubeObject in layers[cube.y].transform) {
-                            if (cubeObject.GetComponent<CubeBehaviour>().cube == cube) {
-                                match = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!match) {
-                        levelInfo.cubes.Remove(cube);
-                    }
-                }*/
             }
         }
 
@@ -450,7 +431,29 @@ public class LevelEditorLogic : MonoBehaviour {
         for (int i = 0; i < (sizeToSet > oldSize ? oldSize : size); i++) {
             layers[i].GetComponent<LayerBehaviour>().Resize(oldSize);
         }
-        
+
+        // Remove unused cubes
+        if (sizeToSet < oldSize) {
+            for (int i = 0; i < levelInfo.cubes.Count; i++) {
+                Cube cube = levelInfo.cubes[i];
+                bool match = false;
+
+                if (cube.y < layers.Count) {
+                    foreach (Transform cubeObject in layers[cube.y].transform) {
+                        if (cubeObject.GetComponent<CubeBehaviour>().cube.position().Equals(cube.position())) {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!match) {
+                    Debug.Log(cube.position());
+                    levelInfo.cubes.Remove(cube);
+                }
+            }
+        }
+
         // Update layers selection texts
         layersSelectionTexts = new string[size];
         for (int i = 0; i < size; i++) {
