@@ -93,6 +93,22 @@ public class GameLogic : MonoBehaviour {
         }
 
         GUILayout.Label("Moves: " + movesCount);
+
+        // Return to LevelEditor or Main Menu
+        if (levelManager.TestMode()) {
+            if (CubeGUI.Button(GUILayout.Button("Return to Level Editor"))) {
+                Application.LoadLevel("LevelEditor");
+            }
+        } else {
+            if (CubeGUI.Button(GUILayout.Button("Return to Level select"))) {
+                Application.LoadLevel("Menu");
+            }
+
+            if (CubeGUI.Button(GUILayout.Button("Return to Main Menu"))) {
+                levelManager.Reset();
+                Application.LoadLevel("Menu");
+            }
+        }
     }
 
     public void NextLevel() {
@@ -131,7 +147,7 @@ public class GameLogic : MonoBehaviour {
 
         // Update camera position
         Vector3 newPosition = border.renderer.bounds.center -
-            new Vector3(0, 0, border.renderer.bounds.center.y + level.size + 1.5f);
+            new Vector3(0, 0, border.renderer.bounds.center.y + level.size * 1.1f);
 
         Camera.main.transform.position = newPosition;
         Camera.main.transform.rotation = Quaternion.identity;

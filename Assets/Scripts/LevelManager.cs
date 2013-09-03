@@ -20,6 +20,7 @@ public class LevelManager : MonoBehaviour {
 
     public List<LevelPack> levelPacks;
     public LevelPack currentLevelPack { get; private set; }
+    public LevelInfo testLevel { get; private set; }
 
     public int currentLevelID { get; private set; }
 
@@ -103,23 +104,43 @@ public class LevelManager : MonoBehaviour {
         return levelPacks;
     }
 
+    public void Reset() {
+        SetCurrentLevel(0);
+        SetCurrentLevelPack(null);
+        SetTestLevel(null);
+    }
+
     public void SetCurrentLevel(int id) {
         currentLevelID = id;
     }
 
-    public void setCurrentLevelPack(LevelPack levelPack) {
+    public void SetCurrentLevelPack(LevelPack levelPack) {
         currentLevelPack = levelPack;
     }
 
+    public void SetTestLevel(LevelInfo levelInfo) {
+        testLevel = levelInfo;
+    }
+
     public LevelInfo NextLevel() {
-        if (currentLevelID < currentLevelPack.levels.Count - 1) {
-            currentLevelID++;            
+        if (!TestMode()) {
+            if (currentLevelID < currentLevelPack.levels.Count - 1) {
+                currentLevelID++;
+            }
         }
 
         return CurrentLevel();
     }
 
     public LevelInfo CurrentLevel() {
-        return currentLevelPack.levels[currentLevelID];
+        if (testLevel != null) {
+            return testLevel;
+        } else {
+            return currentLevelPack.levels[currentLevelID];
+        }
+    }
+
+    public bool TestMode() {
+        return testLevel != null;
     }
 }

@@ -29,7 +29,7 @@ public class LevelEditorLogic : MonoBehaviour {
     public float speed = 5.0f;
 
     // GUI stuff
-    private Rect menuRect = new Rect(50, 60, 150, 100);
+    private Rect menuRect = new Rect(50, 30, 150, 130);
     private Rect toolsRect = new Rect(50, 180, 150, 75);
     private Rect sizeRect = new Rect(50, 270, 150, 50);
     private Rect miscRect = new Rect(50, 350, 150, 50);
@@ -62,7 +62,10 @@ public class LevelEditorLogic : MonoBehaviour {
     private string levelName = "Easy/1";
     private string directory;
 
+    private LevelManager levelManager;
+
     void Start() {
+        levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
         layers = new Dictionary<int, GameObject>();
 
         layersHidden = new Dictionary<int, bool>();
@@ -81,15 +84,20 @@ public class LevelEditorLogic : MonoBehaviour {
         cameraOrigin = Camera.main.transform.position;
         borderBaseScale = border.transform.localScale.y;
 
-        levelInfo = new LevelInfo();
         workplace = GameObject.Find("Workplace").transform;
         directory = Application.streamingAssetsPath + "/Levels/";
 
-        // Initialize layers        
+        levelInfo = new LevelInfo();
         SetLevelSize(DEFAULT_LAYERS_COUNT);
-        levelInfo.size = size;
-        newSize = size;
 
+        // Load test level if exists
+        if (levelManager.TestMode()) {
+            LoadLevel(levelManager.testLevel);
+        } else {
+            newSize = size;
+        }
+   
+        // Initialize layers        
         activeLayer = -1;
         ActivateLayer(0);
     }
@@ -114,29 +122,7 @@ public class LevelEditorLogic : MonoBehaviour {
                         NewLevel();
 
                         // Load level from file
-                        levelInfo = (LevelInfo) formatter.Deserialize(stream);
-
-                        // Apply level size
-                        newSize = levelInfo.size;
-                        SetLevelSize(newSize);
-
-                        // Load Player Cube
-                        if (levelInfo.playerCube != null) {
-                            playerCube = RestoreCubeAt(levelInfo.playerCube.position(), CubeMaterials.PLAYER_CUBE);
-                            levelInfo.playerCube = playerCube.GetComponent<CubeBehaviour>().cube;
-                        }
-
-                        // Load Finish Cube
-                        if (levelInfo.finishCube != null) {
-                            finishCube = RestoreCubeAt(levelInfo.finishCube.position(), CubeMaterials.FINISH_CUBE);
-                            levelInfo.finishCube = finishCube.GetComponent<CubeBehaviour>().cube;
-                        }
-
-                        // Load Cubes
-                        for (int i = 0; i < levelInfo.cubes.Count; i++) {
-                            levelInfo.cubes[i] = RestoreCubeAt(levelInfo.cubes[i].position(), CubeMaterials.STANDARD_CUBE)
-                                .GetComponent<CubeBehaviour>().cube;
-                        }
+                        LoadLevel(formatter.Deserialize(stream) as LevelInfo);
                     } catch (FileNotFoundException) {
                         Debug.Log("File not found: " + levelName);
                     } finally {
@@ -154,6 +140,11 @@ public class LevelEditorLogic : MonoBehaviour {
                     formatter.Serialize(stream, levelInfo);
                     stream.Close();
                 }
+            }
+
+            if (CubeGUI.Button(GUILayout.Button("Test level"))) {
+                GameObject.Find("LevelManager").GetComponent<LevelManager>().SetTestLevel(levelInfo);
+                Application.LoadLevel("Game");
             }
         GUILayout.EndArea();
 
@@ -337,6 +328,32 @@ public class LevelEditorLogic : MonoBehaviour {
         }
     }
 
+    void LoadLevel(LevelInfo newLevelInfo) {
+        levelInfo = newLevelInfo;
+
+        // Apply level size
+        newSize = levelInfo.size;
+        SetLevelSize(newSize);
+
+        // Load Player Cube
+        if (levelInfo.playerCube != null) {
+            playerCube = RestoreCubeAt(levelInfo.playerCube.position(), CubeMaterials.PLAYER_CUBE);
+            levelInfo.playerCube = playerCube.GetComponent<CubeBehaviour>().cube;
+        }
+
+        // Load Finish Cube
+        if (levelInfo.finishCube != null) {
+            finishCube = RestoreCubeAt(levelInfo.finishCube.position(), CubeMaterials.FINISH_CUBE);
+            levelInfo.finishCube = finishCube.GetComponent<CubeBehaviour>().cube;
+        }
+
+        // Load Cubes
+        for (int i = 0; i < levelInfo.cubes.Count; i++) {
+            levelInfo.cubes[i] = RestoreCubeAt(levelInfo.cubes[i].position(), CubeMaterials.STANDARD_CUBE)
+                .GetComponent<CubeBehaviour>().cube;
+        }
+    }
+
     void ActivateLayer(int layerID) {
         if (layerID < 0 || layerID > layers.Count-1) {
             return;
@@ -386,7 +403,6 @@ public class LevelEditorLogic : MonoBehaviour {
                 layer.GetComponent<LayerBehaviour>().layerID = y;
                 layer.GetComponent<LayerBehaviour>().SpawnCubes();
                 layers.Add(y, layer);
-                //newLayer--;
                 
                 layersHidden.Add(y, false);
                 layersHiddenTest.Add(y, false);
@@ -397,12 +413,30 @@ public class LevelEditorLogic : MonoBehaviour {
             for (int y = oldSize - 1; y >= sizeToSet; y--) {
                 Destroy(layers[y]);
                 layers.Remove(y);
-                //newLayer++;
 
                 layersHidden.Remove(y);
                 layersHiddenTest.Remove(y);
                 layersLocked.Remove(y);
                 layersLockedTest.Remove(y);
+
+                // Remove unused cubes
+                /*for (int i = 0; i < levelInfo.cubes.Count; i++) {
+                    Cube cube = levelInfo.cubes[i];
+                    bool match = false;
+
+                    if (cube.y < layers.Count) {
+                        foreach (Transform cubeObject in layers[cube.y].transform) {
+                            if (cubeObject.GetComponent<CubeBehaviour>().cube == cube) {
+                                match = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!match) {
+                        levelInfo.cubes.Remove(cube);
+                    }
+                }*/
             }
         }
 
@@ -545,6 +579,7 @@ public class LevelEditorLogic : MonoBehaviour {
     }
 
     void BackToMenu() {
+        levelManager.Reset();
         Application.LoadLevel("Menu");
     }
 }

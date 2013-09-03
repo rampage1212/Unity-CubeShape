@@ -49,7 +49,7 @@ public class MenuLogic : MonoBehaviour {
                 LevelPack levelPack = levelManager.levelPacks[i];
                 if (CubeGUI.Button(GUILayout.Button(levelPack.packName, skin.customStyles[0]))) {
                     iTween.Stop();
-                    levelManager.setCurrentLevelPack(levelPack);
+                    levelManager.SetCurrentLevelPack(levelPack);
                 }
             }
             GUILayout.EndHorizontal();
@@ -59,7 +59,7 @@ public class MenuLogic : MonoBehaviour {
             }
         } else {
             if (CubeGUI.Button(GUILayout.Button("Back", skin.customStyles[0]))) {
-                levelManager.setCurrentLevelPack(null);
+                levelManager.SetCurrentLevelPack(null);
             } else {
                 int size = levelManager.currentLevelPack.levels.Count;
                 for (int i = 0; i < size; i++) {
