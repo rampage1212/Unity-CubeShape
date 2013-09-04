@@ -18,6 +18,8 @@ public class ImportPack {
 
 public class LevelManager : MonoBehaviour {
 
+    public static LevelManager instance { get; private set; }
+
     public List<LevelPack> levelPacks;
     public LevelPack currentLevelPack { get; private set; }
     public LevelInfo testLevel { get; private set; }
@@ -25,7 +27,13 @@ public class LevelManager : MonoBehaviour {
     public int currentLevelID { get; private set; }
 
     void Awake() {
+        if (instance) {
+            Destroy(gameObject);
+            return;
+        }
+
         GameObject.DontDestroyOnLoad(gameObject);
+        instance = GameObject.Find("LevelManager").GetComponent<LevelManager>();
         levelPacks = new List<LevelPack>();
     }
 

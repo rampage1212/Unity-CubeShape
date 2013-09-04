@@ -65,7 +65,7 @@ public class LevelEditorLogic : MonoBehaviour {
     private LevelManager levelManager;
 
     void Start() {
-        levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
+        levelManager = LevelManager.instance;
         layers = new Dictionary<int, GameObject>();
 
         layersHidden = new Dictionary<int, bool>();
@@ -270,18 +270,14 @@ public class LevelEditorLogic : MonoBehaviour {
             }
         }
 
-        // Mouse scroll back
-        if (Input.GetAxis("Mouse ScrollWheel") < 0) {
-            ActivateLayer(activeLayer - 1);
-        }
-
-        // Mouse scroll forward
-        if (Input.GetAxis("Mouse ScrollWheel") > 0) {
-            ActivateLayer(activeLayer + 1);
+        // Mouse scroll back / forward
+        float mouseScroll = Input.GetAxis("Mouse ScrollWheel");
+        if (mouseScroll != 0.0f) {
+            ActivateLayer(activeLayer + (int) Mathf.Sign(mouseScroll));
         }
   
         if (iTween.Count(gameObject) == 0) {
-            if (Input.GetMouseButtonDown(2)) {
+            if (Input.GetMouseButtonDown(2) || Input.GetKeyDown(KeyCode.Space)) {
                 ToggleOrtho();    
             }
         }
@@ -434,6 +430,7 @@ public class LevelEditorLogic : MonoBehaviour {
 
         // Remove unused cubes
         if (sizeToSet < oldSize) {
+            Debug.Log("Start");
             for (int i = 0; i < levelInfo.cubes.Count; i++) {
                 Cube cube = levelInfo.cubes[i];
                 bool match = false;
@@ -448,7 +445,7 @@ public class LevelEditorLogic : MonoBehaviour {
                 }
 
                 if (!match) {
-                    Debug.Log(cube.position());
+                    Debug.Log("Removing: " + cube.position());
                     levelInfo.cubes.Remove(cube);
                 }
             }

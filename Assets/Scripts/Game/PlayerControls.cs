@@ -4,8 +4,7 @@ using System.Collections;
 public class PlayerControls : MonoBehaviour {
 
     private Vector3 startPosition;
-    public bool finished { get; private set; }
-    
+
     private AudioClip hitSound;
     private AudioClip deathSound;
     private AudioClip completeSound;
@@ -27,7 +26,7 @@ public class PlayerControls : MonoBehaviour {
 	void Update() {
 
         // If not moving at the moment, check input
-        if (!finished && iTween.Count(gameObject) == 0
+        if (iTween.Count(gameObject) == 0
             && iTween.Count(Camera.main.gameObject) == 0) {
             
             Transform direction = Camera.main.transform;
@@ -56,7 +55,6 @@ public class PlayerControls : MonoBehaviour {
 
                         // Collision with FinishCube
                         if (collision.CompareTag("FinishCube")) {
-                            finished = true;
                             onComplete = "AfterFinish";
                         }
                         // Player out of the borders
@@ -91,6 +89,7 @@ public class PlayerControls : MonoBehaviour {
         GameManager.instance.PlayAudio(deathSound);
         transform.position = startPosition;
         game.ResetMovesCount();
+        Camera.main.GetComponent<CameraControls>().ReturnToOriginalPosition();
     }
 
     void AfterFinish() {

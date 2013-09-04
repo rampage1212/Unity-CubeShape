@@ -6,10 +6,12 @@ public class GameManager : MonoBehaviour {
     public static GameManager instance { get; private set; }
 
     void Awake() {
-        GameObject.DontDestroyOnLoad(gameObject);
-    }
+        if (instance) {
+            Destroy(gameObject);
+            return;
+        }
 
-    void Start() {
+        GameObject.DontDestroyOnLoad(gameObject);
         instance = GameObject.Find("GameManager").GetComponent<GameManager>();
     }
 

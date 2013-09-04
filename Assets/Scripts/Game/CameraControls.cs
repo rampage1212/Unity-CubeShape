@@ -27,7 +27,8 @@ public class CameraControls : MonoBehaviour {
 
 	void Update() { 
         // If the object is not moving, check for input
-        if (iTween.Count(gameObject) == 0 && !game.Finished()) {
+        if (iTween.Count(gameObject) == 0 && 
+            game.playerCube != null && iTween.Count(game.playerCube.gameObject) == 0) {
             Vector3 movement = Vector3.zero;
             Vector3 rotation = Vector3.zero;
 
@@ -103,5 +104,10 @@ public class CameraControls : MonoBehaviour {
             Mathf.Round(transform.rotation.eulerAngles.y),
             Mathf.Round(transform.rotation.eulerAngles.z));
         return null;
+    }
+
+    public void ReturnToOriginalPosition() {
+        transform.position = originalPosition;
+        transform.rotation = Quaternion.identity;
     }
 }

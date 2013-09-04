@@ -43,7 +43,7 @@ public class GameLogic : MonoBehaviour {
 
             cubes = new List<GameObject>();
 
-            levelManager = GameObject.Find("LevelManager").GetComponent<LevelManager>();
+            levelManager = LevelManager.instance;
             InitializeLevel(levelManager.CurrentLevel());
         } else {
             Application.LoadLevel("Menu");
@@ -162,13 +162,5 @@ public class GameLogic : MonoBehaviour {
 
     public void IncreaseMovesCount() {
         movesCount++;
-    }
-
-    public bool Finished() {
-        if (playerControls == null) {
-            return true;
-        } else {
-            return playerControls.finished;
-        }
     }
 }
