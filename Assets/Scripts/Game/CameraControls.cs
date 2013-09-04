@@ -34,10 +34,10 @@ public class CameraControls : MonoBehaviour {
 
             // Check for user input and decide on new movement and/or rotation
             // The 0.25f values are just 90 degrees
-            if (Input.GetKeyDown(KeyCode.D)) {
+            if (Input.GetKeyDown(KeyCode.E)) {
                 movement = transform.right + transform.forward;
                 rotation.y = -0.25f;
-            } else if (Input.GetKeyDown(KeyCode.A)) {
+            } else if (Input.GetKeyDown(KeyCode.Q)) {
                 movement = -transform.right + transform.forward;
                 rotation.y = 0.25f;
             } else if (Input.GetKeyDown(KeyCode.W)) {                
@@ -46,11 +46,11 @@ public class CameraControls : MonoBehaviour {
             } else if (Input.GetKeyDown(KeyCode.S)) {
                 movement = -transform.up + transform.forward;
                 rotation.x = -0.25f;
-            } else if (Input.GetKeyDown(KeyCode.Q)) {
+            } else if (Input.GetKeyDown(KeyCode.A)) {
                 rotation.z = -0.25f;
-            } else if (Input.GetKeyDown(KeyCode.E)) {
+            } else if (Input.GetKeyDown(KeyCode.D)) {
                 rotation.z = 0.25f;
-            } else if (Input.GetKeyDown(KeyCode.Space)) {
+            }/* else if (Input.GetKeyDown(KeyCode.Space)) {
                 // Return to the original position
                 if ((transform.position - originalPosition).magnitude > 0.1f) {
                     iTween.MoveTo(gameObject, iTween.Hash("position", originalPosition,
@@ -63,7 +63,7 @@ public class CameraControls : MonoBehaviour {
                         "time", animationDuration, "easetype", "linear", 
                         "onComplete", "AfterRotation"));
                 }
-            }
+            }*/
 
             // If new position is set, translate
             if (!movement.Equals(Vector3.zero)) {

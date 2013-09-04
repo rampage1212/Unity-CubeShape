@@ -33,13 +33,17 @@ public class PlayerControls : MonoBehaviour {
             Vector3 movement = Vector3.zero;
 
             // Handle Cube movement
-            if (Input.GetKeyDown(KeyCode.LeftArrow)) {
+            /*if (Input.GetKeyDown(KeyCode.LeftArrow)) {
                 movement = -direction.right;
             } else if (Input.GetKeyDown(KeyCode.RightArrow)) {
                 movement = direction.right;
             } else if (Input.GetKeyDown(KeyCode.UpArrow)) {
                 movement = direction.up;
             } else if (Input.GetKeyDown(KeyCode.DownArrow)) {
+                movement = -direction.up;
+            }*/
+
+            if (Input.GetKeyDown(KeyCode.Space)) {
                 movement = -direction.up;
             }
 
