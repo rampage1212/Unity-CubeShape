@@ -20,7 +20,7 @@ public class LevelManager : MonoBehaviour {
 
     public static LevelManager instance { get; private set; }
 
-    public List<LevelPack> levelPacks;
+    public List<LevelPack> levelPacks { get; private set; }
     public LevelPack currentLevelPack { get; private set; }
     public LevelInfo testLevel { get; private set; }
 

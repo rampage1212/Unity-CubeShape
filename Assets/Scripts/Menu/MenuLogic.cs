@@ -8,7 +8,7 @@ public class MenuLogic : MonoBehaviour {
     private Rect innerArea = new Rect(500.0f, 200.0f, 500.0f, 500.0f);
 
     const float targetWidth = 1024.0f;
-    const float targetHeight = 768.0f;
+    const float targetHeight = 576.0f;
 
     private LevelManager levelManager;
     private Vector3 scale;

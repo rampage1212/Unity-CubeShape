@@ -9,6 +9,9 @@ public class LevelEditorLogic : MonoBehaviour {
     public static int DEFAULT_LAYERS_COUNT = 7;
 
     public GameObject layerPrefab;
+
+    public GUISkin skin;
+    public GUIStyle toolsSelectionStyle;
     public GUIStyle layersSelectionStyle;
 
     private Dictionary<int, GameObject> layers;
@@ -29,14 +32,31 @@ public class LevelEditorLogic : MonoBehaviour {
     public float speed = 5.0f;
 
     // GUI stuff
-    private Rect menuRect = new Rect(50, 30, 150, 130);
-    private Rect toolsRect = new Rect(50, 180, 150, 75);
-    private Rect sizeRect = new Rect(50, 270, 150, 50);
-    private Rect miscRect = new Rect(50, 350, 150, 50);
-    private Rect layersRect = new Rect(800, 120, 150, 275);
+    private Rect menuRect = new Rect(30, 30, 130, 120);
+    private Rect miscRect = new Rect(30, 170, 130, 25);
+    private Rect toolsRect = new Rect(800, 30, 160, 100);
+    private Rect sizeRect = new Rect(800, 150, 160, 50);
+    private Rect layersRect = new Rect(800, 220, 160, 195);
+    private const int layersRectIncrease = 23;
 
+    // Tools
     public int toolsSelection { get; private set; }
-    private string[] toolsSelections = {"Start Cube", "Finish Cube", "Standard Cube"};
+    public Texture[] toolsTextures;
+
+    // Load / Save
+    private Rect windowRect = CubeGUI.CenterRect(400, 400);
+    private Rect cancelButtonRect = new Rect(10, 20, 130, 25);
+    private Rect actionButtonRect = new Rect(260, 20, 130, 25);
+    private Rect levelPacksRect = new Rect(10, 50, 160, 340);
+    private Rect levelsRect = new Rect(180, 50, 210, 340);
+
+    private bool loadActive;
+    private bool saveActive;
+
+    private string[] packsNames;
+    private Rect packsScrollInner = new Rect(0, 0, 160, 340);
+    private int chosenPack;
+    private Vector2 packsScroll = Vector2.zero;
 
     public int activeLayer { get; private set; }
     private int layersSelection = DEFAULT_LAYERS_COUNT - 1;
@@ -64,14 +84,25 @@ public class LevelEditorLogic : MonoBehaviour {
 
     private LevelManager levelManager;
 
-    void Start() {
+    void Awake() {
         levelManager = LevelManager.instance;
+        if (levelManager == null) {
+            Application.LoadLevel("Menu");
+        }
+    }
+
+    void Start() {
         layers = new Dictionary<int, GameObject>();
 
         layersHidden = new Dictionary<int, bool>();
         layersLocked = new Dictionary<int, bool>();
         layersHiddenTest = new Dictionary<int, bool>();
         layersLockedTest = new Dictionary<int, bool>();
+
+        packsNames = new string[levelManager.levelPacks.Count];
+        for (int i = 0; i < levelManager.levelPacks.Count; i++) {
+            packsNames[i] = levelManager.levelPacks[i].packName;
+        }
 
         // Border settings
         border = GameObject.Find("Border");
@@ -103,44 +134,35 @@ public class LevelEditorLogic : MonoBehaviour {
     }
 
     void OnGUI() {
+        GUI.skin = skin;
+
+        // Load window
+        if (loadActive) {
+            GUI.Window(0, windowRect, LoadWindow, "Load level");
+        }
+
+        // Save window
+        if (saveActive) {
+            GUI.Window(0, windowRect, SaveWindow, "Save level");
+        }
+
         GUI.Box(menuRect, "");
         GUILayout.BeginArea(menuRect);
             if (CubeGUI.Button(GUILayout.Button("New level"))) {
                 NewLevel();
             }
-        
-            levelName = GUILayout.TextField(levelName);
-
-            if (CubeGUI.Button(GUILayout.Button("Load"))) {
-                if (levelName != "") {
-                    Stream stream = null;
-                    try {
-                        stream = new FileStream(directory + levelName + ".lvl", FileMode.Open);
-                        BinaryFormatter formatter = new BinaryFormatter();
-
-                        // Clear the workplace
-                        NewLevel();
-
-                        // Load level from file
-                        LoadLevel(formatter.Deserialize(stream) as LevelInfo);
-                    } catch (FileNotFoundException) {
-                        Debug.Log("File not found: " + levelName);
-                    } finally {
-                        if (stream != null) {
-                            stream.Close();
-                        }
-                    }
-                }
-            }
 
             if (CubeGUI.Button(GUILayout.Button("Save"))) {
-                if (levelName != "") {
-                    Stream stream = new FileStream(directory + levelName + ".lvl", FileMode.Create);
-                    BinaryFormatter formatter = new BinaryFormatter();
-                    formatter.Serialize(stream, levelInfo);
-                    stream.Close();
-                }
+                loadActive = false;
+                saveActive = true;
             }
+
+            if (CubeGUI.Button(GUILayout.Button("Load"))) {
+                saveActive = false;
+                loadActive = true;
+            }
+
+            GUILayout.FlexibleSpace();
 
             if (CubeGUI.Button(GUILayout.Button("Test level"))) {
                 GameObject.Find("LevelManager").GetComponent<LevelManager>().SetTestLevel(levelInfo);
@@ -148,9 +170,19 @@ public class LevelEditorLogic : MonoBehaviour {
             }
         GUILayout.EndArea();
 
-        GUI.Box(toolsRect, "");            
+        // Misc 
+        //GUI.Box(miscRect, "");
+        GUILayout.BeginArea(miscRect);
+            if (CubeGUI.Button(GUILayout.Button("Main Menu"))) {
+                Invoke("BackToMenu", 0.5f);
+            }
+        GUILayout.EndArea();
+
+        // Tools selection     
+        GUI.Box(toolsRect, "");
         GUILayout.BeginArea(toolsRect);
-            toolsSelection = GUILayout.SelectionGrid(toolsSelection, toolsSelections, 1);
+            GUILayout.Label("Current tool");
+            toolsSelection = GUILayout.SelectionGrid(toolsSelection, toolsTextures, toolsTextures.Length, toolsSelectionStyle);
         GUILayout.EndArea();
 
         // Layers size
@@ -158,13 +190,6 @@ public class LevelEditorLogic : MonoBehaviour {
         GUILayout.BeginArea(sizeRect);
             GUILayout.Label("Level size: " + newSize);
             newSize = (int) GUILayout.HorizontalSlider(newSize, 3, 10, GUILayout.Width(140));            
-        GUILayout.EndArea();
-
-        GUI.Box(miscRect, "");
-        GUILayout.BeginArea(miscRect);
-            if (CubeGUI.Button(GUILayout.Button("Main Menu"))) {
-                Invoke("BackToMenu", 0.5f);
-            }
         GUILayout.EndArea();
 
         GUI.Box(layersRect, "");
@@ -183,7 +208,70 @@ public class LevelEditorLogic : MonoBehaviour {
                 GUILayout.EndVertical();
             GUILayout.EndHorizontal();
         GUILayout.EndArea();
-    } 
+    }
+
+    void LoadWindow(int windowID) {
+        if (CubeGUI.Button(GUI.Button(cancelButtonRect, "Cancel"))) {
+            loadActive = false;
+        }
+
+        if (CubeGUI.Button(GUI.Button(actionButtonRect, "Load"))) {
+            loadActive = false;
+        }
+
+        GUI.Box(levelPacksRect, "");
+        DisplayLevelPacks();
+
+        GUI.Box(levelsRect, "");
+
+        if (false) {
+            Stream stream = null;
+            try {
+                stream = new FileStream(directory + levelName + ".lvl", FileMode.Open);
+                BinaryFormatter formatter = new BinaryFormatter();
+
+                // Clear the workplace
+                NewLevel();
+
+                // Load level from file
+                LoadLevel(formatter.Deserialize(stream) as LevelInfo);
+            } catch (FileNotFoundException) {
+                Debug.Log("File not found: " + levelName);
+            } finally {
+                if (stream != null) {
+                    stream.Close();
+                }
+            }
+        }
+    }
+
+    void SaveWindow(int windowID) {
+        if (CubeGUI.Button(GUI.Button(cancelButtonRect, "Cancel"))) {
+            saveActive = false;
+        }
+
+        if (CubeGUI.Button(GUI.Button(actionButtonRect, "Save"))) {
+            saveActive = false;
+        }
+
+        GUI.Box(levelPacksRect, "");
+        DisplayLevelPacks();
+
+        GUI.Box(levelsRect, "");
+
+        if (false) {
+            Stream stream = new FileStream(directory + levelName + ".lvl", FileMode.Create);
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Serialize(stream, levelInfo);
+            stream.Close();
+        }
+    }
+
+    void DisplayLevelPacks() {
+        packsScroll = GUI.BeginScrollView(levelPacksRect, packsScroll, packsScrollInner);
+        chosenPack = GUI.SelectionGrid(packsScrollInner, chosenPack, packsNames, 1);
+        GUI.EndScrollView();
+    }
 
     void Update() {
         if (Input.GetMouseButtonDown(0)) {
@@ -405,7 +493,11 @@ public class LevelEditorLogic : MonoBehaviour {
                 layersLocked.Add(y, false);
                 layersLockedTest.Add(y, false);
             }
-        } else { // Remove layers
+
+            if (oldSize > 0) {
+                layersRect.height += layersRectIncrease * (sizeToSet - oldSize);
+            }
+        } else if (sizeToSet < oldSize) { // Remove layers
             for (int y = oldSize - 1; y >= sizeToSet; y--) {
                 Destroy(layers[y]);
                 layers.Remove(y);
@@ -415,6 +507,8 @@ public class LevelEditorLogic : MonoBehaviour {
                 layersLocked.Remove(y);
                 layersLockedTest.Remove(y);
             }
+
+            layersRect.height -= layersRectIncrease * (oldSize - sizeToSet);
         }
 
         // Update layers indicators
@@ -430,7 +524,6 @@ public class LevelEditorLogic : MonoBehaviour {
 
         // Remove unused cubes
         if (sizeToSet < oldSize) {
-            Debug.Log("Start");
             for (int i = 0; i < levelInfo.cubes.Count; i++) {
                 Cube cube = levelInfo.cubes[i];
                 bool match = false;
@@ -445,7 +538,6 @@ public class LevelEditorLogic : MonoBehaviour {
                 }
 
                 if (!match) {
-                    Debug.Log("Removing: " + cube.position());
                     levelInfo.cubes.Remove(cube);
                 }
             }
